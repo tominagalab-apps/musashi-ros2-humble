@@ -12,6 +12,7 @@ setup(
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/launch', ['launch/player_display.py']),
         ('share/' + package_name + '/urdf', ['urdf/musashi_player.urdf']),
+        ('share/' + package_name + '/meshes', ['meshes/musashi_player.stl']),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -22,6 +23,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'tf2_sample01 = musashi_description.tf2_sample01:main'
         ],
     },
 )
