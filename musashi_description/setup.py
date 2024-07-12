@@ -10,8 +10,6 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        ('share/' + package_name + '/launch', ['launch/player_spawn.py']),
-        ('share/' + package_name + '/launch', ['launch/team_spawn.py']),
         ('share/' + package_name + '/urdf', ['urdf/musashi_player.urdf']),
         ('share/' + package_name + '/meshes', ['meshes/musashi_player.stl']),
     ],
