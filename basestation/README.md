@@ -14,7 +14,7 @@ basestation
 ├── README.md
 ├── musashi_rqt_player_server
 ├── musashi_rqt_refereebox_client
-└── player_controller
+└── musashi_rqt_player_controller
 </pre>
 
 ## パッケージリスト  
