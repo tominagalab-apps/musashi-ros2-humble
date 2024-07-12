@@ -1,21 +1,28 @@
-# basestation  
+# basestation（旧コーチボックス）  
 コーチボックス関係のパッケージを配置しているディレクトリです．
+
+## 実行方法  
+各パッケージはrqt_guiのプラグインとして開発されているので，  
+1. rqtを起動する．ターミナルで`rqt`を実行   
+1. 左上`Plugins`メニューから各プラグインを読み込む  
+
+の手順でbasestation用の画面が完成する．  
 
 ## ディレクトリ構成  
 <pre>
 basestation
 ├── README.md
-├── player_controller
-├── player_server
-└── refereebox_client
+├── musashi_rqt_player_server
+├── musashi_rqt_refereebox_client
+└── player_controller
 </pre>
 
 ## パッケージリスト  
-|Package name|Details|
+|Package name|Description|
 |---|---|
-|player_controller|各プレイヤーへのデータ送信を行うパッケージ|
-|player_server|各プレイヤーからのデータ受信を行うパッケージ|  
-|refereebox_client| レフェリーボックスと通信を行うパッケージ|  
+|musashi_rqt_player_controller|各プレイヤーへのデータ送信を行うパッケージ|
+|musashi_rqt_player_server|各プレイヤーからのデータ受信を行うパッケージ|  
+|musashi_rqt_refereebox_client| レフェリーボックスと通信を行うパッケージ|  
 
 ## RefereeBoxとCoachBox間通信について
 RefereeBoxとはTCPで送受信を行います．  

@@ -24,6 +24,7 @@ musashi-ros2-humble（ルートディレクトリ）
 ├── behavior
 ├── hardware
 ├── localization
+├── musashi_description  
 ├── musashi_msgs
 └── perception
 </pre>
@@ -35,8 +36,19 @@ musashi-ros2-humble（ルートディレクトリ）
 |behavior|ルールベース行動決定，ステートマシン，行動選択のディレクトリ|
 |hardware|外部デバイス制御用のディレクトリ|
 |localization|自己位置推定用のディレクトリ|
+|musashi_description|ロボットモデルを管理するディレクトリ|  
 |musashi_msgs|独自メッセージ用のディレクトリ|
 |perception|外界認識，知覚系のディレクトリ|
+
+## ビルドコマンド  
+- 全パッケージの一括ビルド  
+ワークスペースのルートディレクトリで以下を実行する．  
+`colcon build --symlink-install`  
+
+- basestation（旧コーチボックス）関連のみビルド  
+以下コマンドで関連パッケージの一括ビルド． 
+NeoAPIライブラリやMaxonEPOSライブラリを未インストールなPCでbasestationだけ動かしたい場合は便利．   
+``colcon build --packages-select musashi_rqt_player_server musashi_rqt_refereebox_client player_controller ``  
 
 ## パッケージ作成コマンド例  
 - pythonパッケージ  
@@ -44,4 +56,4 @@ musashi-ros2-humble（ルートディレクトリ）
 - C++パッケージ  
 ``ros2 pkg create [package name] --build-type ament_cmake --dependencies rclcpp``  
 - pythonのrqtプラグインパッケージ  
-`ros2 pkg create [package name] --build-type ament_python --dependencies rclpy python_qt_binding rqt_gui rqt_gui_py rqt_py_common`
+`ros2 pkg create [package name] --build-type ament_python --dependencies rclpy python_qt_binding rqt_gui rqt_gui_py rqt_py_common
