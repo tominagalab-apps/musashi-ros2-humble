@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'player_controller'
+package_name = 'musashi_rqt_player_controller'
 
 setup(
     name=package_name,
