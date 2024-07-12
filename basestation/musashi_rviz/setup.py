@@ -24,7 +24,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'node_field_publisher = musashi_rviz.node_field_publisher:main'
+            'node_field_publisher = musashi_rviz.node_field_publisher:main',
+            'node_sample01_tf_publisher = musashi_rviz.node_sample01_tf_publisher:main',
         ],
     },
 )
