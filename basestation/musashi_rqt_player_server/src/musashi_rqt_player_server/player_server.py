@@ -9,7 +9,6 @@ IP = '127.0.0.1'
 PORT = 12536
 MAX_RECV_SIZE = 4096
 
-
 class PlayerServer(QThread):
 
     # シグナル定義

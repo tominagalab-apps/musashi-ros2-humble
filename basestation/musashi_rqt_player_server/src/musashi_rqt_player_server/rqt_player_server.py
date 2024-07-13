@@ -116,6 +116,7 @@ class RqtPlayerServer(Plugin):
   def onRecievedPlayerData(self, id, player_state):
     self._node.get_logger().debug('Player No:{}, states={}'.format(id, player_state))
     
+    player_state.header.stamp = self._node.get_clock().now().to_msg()
     self.player_states.players[id - 1] = player_state # 配列に代入
     
     return
