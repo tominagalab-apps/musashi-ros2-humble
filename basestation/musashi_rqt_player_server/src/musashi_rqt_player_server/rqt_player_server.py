@@ -1,4 +1,5 @@
 import os
+import struct
 from ament_index_python.resources import get_resource
 from python_qt_binding import loadUi
 from python_qt_binding.QtWidgets import QWidget
@@ -19,6 +20,35 @@ UI_FILE_NAME = 'player_server.ui'
 
 PUBLISH_RATE = 0.16  # 33Hz
 
+TEAM_IP = '224.16.32.44'
+
+MAGENTA = 0
+CYAN = 1
+
+# hibikino-musashiのチーム内コマンド
+WELCOME = 00
+START = 10
+STOP = 11
+FIRST = 20
+SECOND = 21
+KICKOFF_M = 30
+KICKOFF_C = 40
+THROWIN_M = 31
+THROWIN_C = 41
+CORNER_KICK_M = 32
+CORNER_KICK_C = 42
+GOAL_KICK_M = 33
+GOAL_KICK_C = 43
+FREE_KICK_M = 34
+FREE_KICK_C = 44
+PENALTY_M = 35
+PENALTY_C = 45
+GOAL_M = 36
+GOAL_C = 46
+DROP_BALL = 55
+CALIB_COMPASS = 66
+
+
 class RqtPlayerServer(Plugin):
     def __init__(self, context):
         super(RqtPlayerServer, self).__init__(context)
@@ -27,8 +57,14 @@ class RqtPlayerServer(Plugin):
         self._context = context
         self._node = context.node
 
+        # レフェリーからのコマンド（musashi_msgs.msgのRefereeCmd型）
+        self.refcmd = RefereeCmd()
+
         # チームの情報（プレイヤー情報の配列）
         self.player_states = PlayerStates()
+
+        # チームカラー
+        self.team_color = CYAN
 
         # ウィジェットインスタンスを作成
         # メンバ変数_widgetに.uiファイルが書き込まれる
@@ -108,9 +144,170 @@ class RqtPlayerServer(Plugin):
     def restore_settings(self, plugin_settings, instance_settings):
         pass
 
-    # refereebox_clientがパブリッシュした，レフェリーボックスコマンドのサブスクライバー
+    # レフェリーボックスコマンドのサブスクライバ-コールバック関数
     def refcmd_callback(self, msg):
         self._node.get_logger.info(msg.command, msg.target_team)
+        self.refcmd = msg  # メンバ変数に格納
+
+        # hibikino-musashiチーム内のコマンドへ変換
+        if self.refcmd.command == 'START':
+            self.teamcmd = START
+        elif self.refcmd.command == 'STOP':
+            self.teamcmd = STOP
+        elif self.refcmd.command == 'DROP_BALL':
+            self.teamcmd = DROP_BALL
+        elif self.refcmd.command == 'HALF_TIMER':
+            pass
+        elif self.refcmd.command == 'END_GAME':
+            pass
+        elif self.refcmd.command == 'GAME_OVER':
+            pass
+        elif self.refcmd.command == 'PARK':
+            pass
+        elif self.refcmd.command == 'FIRST_HALF':
+            self.teamcmd = FIRST
+        elif self.refcmd.command == 'SECOND_HALF':
+            self.teamcmd = SECOND
+        elif self.refcmd.command == 'FIRST_HALF_OVERTIME':
+            pass
+        elif self.refcmd.command == 'SECOND_HALF_OVERTIME':
+            pass
+        elif self.refcmd.command == 'WELCOME':
+            self.teamcmd = WELCOME
+        elif self.refcmd.command == 'KICKOFF':
+            if self.refcmd.target_team == TEAM_IP:
+                if self.team_color == MAGENTA:
+                    self.teamcmd = KICKOFF_M
+                else:
+                    self.teamcmd = KICKOFF_C
+            else:  # 相手のキックオフなら
+                if self.team_color == MAGENTA:
+                    self.teamcmd = KICKOFF_C
+                else:
+                    self.teamcmd = KICKOFF_M
+        elif self.refcmd.command == 'GOALKICK':
+            if self.refcmd.target_team == TEAM_IP:
+                if self.team_color == MAGENTA:
+                    self.teamcmd = GOAL_KICK_M
+                else:
+                    self.teamcmd = GOAL_KICK_C
+            else:  # 相手のキックオフなら
+                if self.team_color == MAGENTA:
+                    self.teamcmd = GOAL_KICK_C
+                else:
+                    self.teamcmd = GOAL_KICK_M
+        elif self.refcmd.command == 'THROWIN':
+            if self.refcmd.target_team == TEAM_IP:
+                if self.team_color == MAGENTA:
+                    self.teamcmd = THROWIN_M
+                else:
+                    self.teamcmd = THROWIN_C
+            else:  # 相手のキックオフなら
+                if self.team_color == MAGENTA:
+                    self.teamcmd = THROWIN_C
+                else:
+                    self.teamcmd = THROWIN_M
+        elif self.refcmd.command == 'CORNER':
+            if self.refcmd.target_team == TEAM_IP:
+                if self.team_color == MAGENTA:
+                    self.teamcmd = CORNER_KICK_M
+                else:
+                    self.teamcmd = CORNER_KICK_C
+            else:  # 相手のコーナーキックなら
+                if self.team_color == MAGENTA:
+                    self.teamcmd = CORNER_KICK_C
+                else:
+                    self.teamcmd = CORNER_KICK_M
+        elif self.refcmd.command == 'PENALTY':
+            if self.refcmd.target_team == TEAM_IP:
+                if self.team_color == MAGENTA:
+                    self.teamcmd = PENALTY_M
+                else:
+                    self.teamcmd = PENALTY_C
+            else:  # 相手のキックオフなら
+                if self.team_color == MAGENTA:
+                    self.teamcmd = PENALTY_C
+                else:
+                    self.teamcmd = PENALTY_M
+        elif self.refcmd.command == 'GOAL':
+            if self.refcmd.target_team == TEAM_IP:
+                if self.team_color == MAGENTA:
+                    self.teamcmd = GOAL_M
+                else:
+                    self.teamcmd = GOAL_C
+            else:  # 相手のキックオフなら
+                if self.team_color == MAGENTA:
+                    self.teamcmd = GOAL_C
+                else:
+                    self.teamcmd = GOAL_M
+        elif self.refcmd.command == 'REPAIR':
+            if self.refcmd.target_team == TEAM_IP:
+                if self.team_color == MAGENTA:
+                    pass
+                else:
+                    pass
+            else:  # 相手のキックオフなら
+                if self.team_color == MAGENTA:
+                    pass
+                else:
+                    pass
+        elif self.refcmd.command == 'YELLOW_CARD':
+            if self.refcmd.target_team == TEAM_IP:
+                if self.team_color == MAGENTA:
+                    pass
+                else:
+                    pass
+            else:  # 相手のキックオフなら
+                if self.team_color == MAGENTA:
+                    pass
+                else:
+                    pass
+        elif self.refcmd.command == 'DOUBLE_YELLOW_CARD':
+            if self.refcmd.target_team == TEAM_IP:
+                if self.team_color == MAGENTA:
+                    pass
+                else:
+                    pass
+            else:  # 相手のキックオフなら
+                if self.team_color == MAGENTA:
+                    pass
+                else:
+                    pass
+        elif self.refcmd.command == 'RED_CARD':
+            if self.refcmd.target_team == TEAM_IP:
+                if self.team_color == MAGENTA:
+                    pass
+                else:
+                    pass
+            else:  # 相手のキックオフなら
+                if self.team_color == MAGENTA:
+                    pass
+                else:
+                    pass
+        elif self.refcmd.command == 'SUBSTITUTION':
+            if self.refcmd.target_team == TEAM_IP:
+                if self.team_color == MAGENTA:
+                    pass
+                else:
+                    pass
+            else:  # 相手のキックオフなら
+                if self.team_color == MAGENTA:
+                    pass
+                else:
+                    pass
+        elif self.refcmd.command == 'IS_ALIVE':
+            if self.refcmd.target_team == TEAM_IP:
+                if self.team_color == MAGENTA:
+                    pass
+                else:
+                    pass
+            else:  # 相手のキックオフなら
+                if self.team_color == MAGENTA:
+                    pass
+                else:
+                    pass
+
+        return
 
     # PlayerStatesをパブリッシュするタイマコールバック関数
     def player_states_publish_timer_callback(self,):
@@ -151,6 +348,70 @@ class RqtPlayerServer(Plugin):
         player_state.header.stamp = self._node.get_clock().now().to_msg()
         self.player_states.players[id - 1] = player_state  # 配列に代入
 
-        # tfの作成とブロードキャスト
+        # 受信したらプレイヤーへの返信
+        # 返信内容はコマンド＋全プレイヤーのデータ
+
+        # commandリスト作成
+        command = [self.teamcmd]*5
+
+        # stateリスト作成
+        state = [
+            self.player_states.players[0].state,
+            self.player_states.players[1].state,
+            self.player_states.players[2].state,
+            self.player_states.players[3].state,
+            self.player_states.players[4].state,
+        ]
+        
+        # ball_distanceリスト作成
+        ball_distance = [
+            self.player_states.players[0].ball.distance,
+            self.player_states.players[1].ball.distance,
+            self.player_states.players[2].ball.distance,
+            self.player_states.players[3].ball.distance,
+            self.player_states.players[4].ball.distance,
+        ]
+
+        # ball_angleリスト作成
+        ball_angle = [
+            self.player_states.players[0].ball.angle,
+            self.player_states.players[1].ball.angle,
+            self.player_states.players[2].ball.angle,
+            self.player_states.players[3].ball.angle,
+            self.player_states.players[4].ball.angle,
+        ]
+        
+        # goal_distanceリスト作成
+        goal_distance = [
+            self.player_states.players[0].goal.distance,
+            self.player_states.players[1].goal.distance,
+            self.player_states.players[2].goal.distance,
+            self.player_states.players[3].goal.distance,
+            self.player_states.players[4].goal.distance,
+        ]
+        
+        # goal_distanceリスト作成
+        goal_angle = [
+            self.player_states.players[0].goal.angle,
+            self.player_states.players[1].goal.angle,
+            self.player_states.players[2].goal.angle,
+            self.player_states.players[3].goal.angle,
+            self.player_states.players[4].goal.angle,
+        ]
+
+        send_data = struct.pack(
+            'iiiiiiiiiiiidddddddddddddddddddd',
+            5,  # aliveNum
+            self.team_color,  # color
+            command,  # command[5] リストだとまとめて入らんかな...
+            state, # state[5]
+            ball_distance, # ball_distance[5]
+            ball_angle, # ball_angle[5]
+            goal_distance, # goal_distance[5]
+            goal_angle, # goal_angle[5]
+        )
+
+        # 送信処理
+        self._player_server.send(send_data)
 
         return

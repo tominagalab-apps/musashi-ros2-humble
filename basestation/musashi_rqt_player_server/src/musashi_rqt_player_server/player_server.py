@@ -100,48 +100,11 @@ class PlayerServer(QThread):
             player_state.obstacle.distance = float(values[18])
             # player_state.obstacle.angle = float(values[19])
 
-            # リストから辞書に変換しておく
-            # ついでに整数型に変換しておく
-            # data = {
-            #     'color': int(values[0]),
-            #     'id': int(values[1]),
-            #     'action': int(values[2]),
-            #     'state': int(values[3]),
-            #     'ball': {
-            #         'distance': int(values[4]),
-            #         'angle': int(values[5]),
-            #     },
-            #     'goal': {
-            #         'distance': int(values[6]),
-            #         'angle': int(values[7]),
-            #     },
-            #     'myGoal': {
-            #         'distance': int(values[8]),
-            #         'angle': int(values[9]),
-            #     },
-            #     'position': {
-            #         'x': int(values[10]),
-            #         'y': int(values[11]),
-            #         'angle': int(values[12])
-            #     },
-            #     'role': int(values[13]),
-            #     'haveBall': int(values[14]),
-            #     'move_to': {
-            #         'x': int(values[15]),
-            #         'y': int(values[16]),
-            #         'angle': int(values[17])
-            #     },
-            #     'obstacle': {
-            #         'distance': int(values[18]),
-            #         'angle': int(values[19])
-            #     }
-            # }
-
-            # プレイヤーデータリストに格納
-            # self._players[player_no] = data
-
             # シグナル発行
             self.recievedPlayerData.emit(player_no, player_state)
+
+    def send(self,):
+        return
 
     def euler_to_quaternion(self, roll, pitch, yaw):
       qx = math.sin(roll/2) * math.cos(pitch/2) * math.cos(yaw/2) - \
