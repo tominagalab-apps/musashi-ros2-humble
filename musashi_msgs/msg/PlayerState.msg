@@ -1,4 +1,5 @@
 std_msgs/Header header
+int32 color
 int32 id
 int32 action
 int32 state
