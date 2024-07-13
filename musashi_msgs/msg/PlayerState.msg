@@ -7,6 +7,6 @@ int32 haveball
 Polar2D ball
 Polar2D goal
 Polar2D my_goal
-Pose position
-Pose moveto
+geometry_msgs/Pose position
+geometry_msgs/Pose moveto
 Polar2D obstacle
