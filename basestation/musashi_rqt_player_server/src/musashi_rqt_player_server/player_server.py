@@ -4,7 +4,8 @@ import socket
 import math
 from musashi_msgs.msg import PlayerState
 
-IP = '172.16.44.10'
+IP = '127.0.0.1'
+# IP = '172.16.44.10'
 PORT = 12536
 MAX_RECV_SIZE = 4096
 
@@ -57,9 +58,9 @@ class PlayerServer(QThread):
             recv_str = recv.decode()  # bytesオブジェクトからstrオブジェクトへ変換
             values = recv_str.split(',')  # カンマで分割処理->文字列オブジェクトのリストオブジェクトになる
 
-            print('Player No={}'.format(player_no))
-            print('recv(srt)=', recv_str)
-            print('splited({})={}'.format(len(values), values))
+            # print('Player No={}'.format(player_no))
+            # print('recv(srt)=', recv_str)
+            # print('splited({})={}'.format(len(values), values))
 
             # PlayerState型に値を代入
             player_state = PlayerState()

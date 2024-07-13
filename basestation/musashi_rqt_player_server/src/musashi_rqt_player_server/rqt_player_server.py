@@ -39,6 +39,13 @@ class RqtPlayerServer(Plugin):
       10
     )
     
+    # パブリッシャー作成
+    self._pub_player_stats = self._node.create_publisher(
+      PlayerStates,
+      '/player_states',
+      10
+    )
+    
     # PlayerServer作成，シグナルスロット接続，起動
     self._player_server = PlayerServer() # PlayerServerインスタンス作成
     self._player_server.recievedPlayerData.connect(self.onRecievedPlayerData) # シグナルスロット接続
@@ -98,7 +105,7 @@ class RqtPlayerServer(Plugin):
     
   # PlayerStatesをパブリッシュするタイマコールバック関数
   def player_states_publish_timer_callback(self,):
-    # self._node.get_logger().info('test')
+    self._pub_player_stats.publish(self.player_states)    
     return
   
   # PlayerServerクラスからシグナルが発行された時に実行されるスロット
@@ -107,7 +114,9 @@ class RqtPlayerServer(Plugin):
   # player_state: プレイヤーのデータ
   @Slot(int, PlayerState)
   def onRecievedPlayerData(self, id, player_state):
-    # self._node.get_logger().info(id, player_state)
+    self._node.get_logger().debug('Player No:{}, states={}'.format(id, player_state))
+    
     self.player_states.players[id - 1] = player_state # 配列に代入
+    
     return
   
