@@ -55,6 +55,11 @@ class PlayerServer(QThread):
 
             # recvの文字列をカンマでスプリットする
             recv_str = recv.decode()  # bytesオブジェクトからstrオブジェクトへ変換
+            
+            if recv_str[0] == 'R' or recv_str[0] == 'P':
+                continue            
+            
+            
             values = recv_str.split(',')  # カンマで分割処理->文字列オブジェクトのリストオブジェクトになる
 
             # print('Player No={}'.format(player_no))

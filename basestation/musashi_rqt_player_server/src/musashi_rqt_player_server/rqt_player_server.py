@@ -25,6 +25,12 @@ TEAM_IP = '224.16.32.44'
 MAGENTA = 0
 CYAN = 1
 
+ALPHA = 1
+BETA = 2
+GAMMA = 3
+DELTA = 4
+GOALIE = 5
+
 # hibikino-musashiのチーム内コマンド
 WELCOME = 00
 START = 10
@@ -47,7 +53,6 @@ GOAL_M = 36
 GOAL_C = 46
 DROP_BALL = 55
 CALIB_COMPASS = 66
-
 
 class RqtPlayerServer(Plugin):
     def __init__(self, context):
@@ -351,67 +356,243 @@ class RqtPlayerServer(Plugin):
         # 受信したらプレイヤーへの返信
         # 返信内容はコマンド＋全プレイヤーのデータ
 
-        # commandリスト作成
-        command = [self.teamcmd]*5
+        send_data = struct.pack(
+            'ii',
+            5,  # aliveNum
+            self.team_color,  # color
+        )
 
-        # stateリスト作成
-        state = [
+        # commandリスト作成,結合
+        send_data = send_data + struct.pack(
+            'iiiii',
+            self.teamcmd,
+            self.teamcmd,
+            self.teamcmd,
+            self.teamcmd,
+            self.teamcmd,
+        )
+
+        # stateリスト結合
+        send_data = send_data + struct.pack(
+            'iiiii',
             self.player_states.players[0].state,
             self.player_states.players[1].state,
             self.player_states.players[2].state,
             self.player_states.players[3].state,
-            self.player_states.players[4].state,
-        ]
-        
-        # ball_distanceリスト作成
-        ball_distance = [
+            self.player_states.players[4].state
+        )
+
+        # ball_distanceリスト作成，結合
+        send_data = send_data + struct.pack(
+            'ddddd',
             self.player_states.players[0].ball.distance,
             self.player_states.players[1].ball.distance,
             self.player_states.players[2].ball.distance,
             self.player_states.players[3].ball.distance,
             self.player_states.players[4].ball.distance,
-        ]
+        )
 
-        # ball_angleリスト作成
-        ball_angle = [
+        # ball_angleリスト作成，結合
+        send_data = send_data + struct.pack(
+            'ddddd',
             self.player_states.players[0].ball.angle,
             self.player_states.players[1].ball.angle,
             self.player_states.players[2].ball.angle,
             self.player_states.players[3].ball.angle,
             self.player_states.players[4].ball.angle,
-        ]
-        
-        # goal_distanceリスト作成
-        goal_distance = [
+        )
+
+        # goal_distanceリスト作成，結合Ï
+        send_data = send_data + struct.pack(
+            'ddddd',
             self.player_states.players[0].goal.distance,
             self.player_states.players[1].goal.distance,
             self.player_states.players[2].goal.distance,
             self.player_states.players[3].goal.distance,
             self.player_states.players[4].goal.distance,
-        ]
-        
-        # goal_distanceリスト作成
-        goal_angle = [
+        )
+
+        # goal_angleリスト作成，結合Ï
+        send_data = send_data + struct.pack(
+            'ddddd',
             self.player_states.players[0].goal.angle,
             self.player_states.players[1].goal.angle,
             self.player_states.players[2].goal.angle,
             self.player_states.players[3].goal.angle,
             self.player_states.players[4].goal.angle,
-        ]
+        )
 
-        send_data = struct.pack(
-            'iiiiiiiiiiiidddddddddddddddddddd',
-            5,  # aliveNum
-            self.team_color,  # color
-            command,  # command[5] リストだとまとめて入らんかな...
-            state, # state[5]
-            ball_distance, # ball_distance[5]
-            ball_angle, # ball_angle[5]
-            goal_distance, # goal_distance[5]
-            goal_angle, # goal_angle[5]
+        # my_goal.distanceリスト作成，結合Ï
+        send_data = send_data + struct.pack(
+            'ddddd',
+            self.player_states.players[0].my_goal.distance,
+            self.player_states.players[1].my_goal.distance,
+            self.player_states.players[2].my_goal.distance,
+            self.player_states.players[3].my_goal.distance,
+            self.player_states.players[4].my_goal.distance,
+        )
+
+        # my_goal.angleリスト作成，結合Ï
+        send_data = send_data + struct.pack(
+            'ddddd',
+            self.player_states.players[0].my_goal.angle,
+            self.player_states.players[1].my_goal.angle,
+            self.player_states.players[2].my_goal.angle,
+            self.player_states.players[3].my_goal.angle,
+            self.player_states.players[4].my_goal.angle,
+        )
+
+        # position.xリスト作成，結合Ï
+        send_data = send_data + struct.pack(
+            'ddddd',
+            self.player_states.players[0].position.position.x,
+            self.player_states.players[1].position.position.x,
+            self.player_states.players[2].position.position.x,
+            self.player_states.players[3].position.position.x,
+            self.player_states.players[4].position.position.x,
+        )
+        # position.yリスト作成，結合Ï
+        send_data = send_data + struct.pack(
+            'ddddd',
+            self.player_states.players[0].position.position.y,
+            self.player_states.players[1].position.position.y,
+            self.player_states.players[2].position.position.y,
+            self.player_states.players[3].position.position.y,
+            self.player_states.players[4].position.position.y,
+        )
+        # position.angleリスト作成，結合
+        # クォータニオンからRPYに変換する必要がある
+        send_data = send_data + struct.pack(
+            'ddddd',
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+        )
+
+        # ロールの決定処理
+        roles = self.roles_dicision()
+
+        # roleリスト作成，結合
+        send_data = send_data + struct.pack(
+            'iiiii',
+            roles[0],
+            roles[1],
+            roles[2],
+            roles[3],
+            roles[4],
+        )
+        
+        # haveBallリスト作成，結合
+        send_data = send_data + struct.pack(
+            'iiiii',
+            self.player_states.players[0].haveball,
+            self.player_states.players[1].haveball,
+            self.player_states.players[2].haveball,
+            self.player_states.players[3].haveball,
+            self.player_states.players[4].haveball
+        )
+        
+         # moveto.xリスト作成，結合Ï
+        send_data = send_data + struct.pack(
+            'ddddd',
+            self.player_states.players[0].moveto.position.x,
+            self.player_states.players[1].moveto.position.x,
+            self.player_states.players[2].moveto.position.x,
+            self.player_states.players[3].moveto.position.x,
+            self.player_states.players[4].moveto.position.x,
+        )
+        
+        # moveto.yリスト作成，結合Ï
+        send_data = send_data + struct.pack(
+            'ddddd',
+            self.player_states.players[0].moveto.position.y,
+            self.player_states.players[1].moveto.position.y,
+            self.player_states.players[2].moveto.position.y,
+            self.player_states.players[3].moveto.position.y,
+            self.player_states.players[4].moveto.position.y,
+        )
+        
+        # moveto.angleリスト作成，結合
+        # クォータニオンからRPYに変換する必要がある
+        send_data = send_data + struct.pack(
+            'ddddd',
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+        )
+        
+        # oblstacle.distanceリスト作成，結合Ï
+        send_data = send_data + struct.pack(
+            'ddddd',
+            self.player_states.players[0].obstacle.distance,
+            self.player_states.players[1].obstacle.distance,
+            self.player_states.players[2].obstacle.distance,
+            self.player_states.players[3].obstacle.distance,
+            self.player_states.players[4].obstacle.distance,
+        )
+
+        # obstacle.angleリスト作成，結合Ï
+        send_data = send_data + struct.pack(
+            'ddddd',
+            self.player_states.players[0].obstacle.angle,
+            self.player_states.players[1].obstacle.angle,
+            self.player_states.players[2].obstacle.angle,
+            self.player_states.players[3].obstacle.angle,
+            self.player_states.players[4].obstacle.angle,
+        )
+        
+        # state_vectorリスト作成，結合
+        # 多分position（自己位置）のデータだったはず
+        # position.xリスト作成，結合Ï
+        send_data = send_data + struct.pack(
+            'ddddd',
+            self.player_states.players[0].position.position.x,
+            self.player_states.players[1].position.position.x,
+            self.player_states.players[2].position.position.x,
+            self.player_states.players[3].position.position.x,
+            self.player_states.players[4].position.position.x,
+        )
+        # position.yリスト作成，結合Ï
+        send_data = send_data + struct.pack(
+            'ddddd',
+            self.player_states.players[0].position.position.y,
+            self.player_states.players[1].position.position.y,
+            self.player_states.players[2].position.position.y,
+            self.player_states.players[3].position.position.y,
+            self.player_states.players[4].position.position.y,
+        )
+        # position.angleリスト作成，結合
+        # クォータニオンからRPYに変換する必要がある
+        send_data = send_data + struct.pack(
+            'ddddd',
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
         )
 
         # 送信処理
         self._player_server.send(send_data)
 
         return
+
+    def role_dicision(self,):
+        roles = [0, 0, 0, 0, 0]
+        
+        
+        
+        #-----
+        # ここから頑張って各プレイヤーのロールを決定する処理
+        #-----
+        
+        
+        
+        
+        # ロール決定処理ここまで
+        return roles # 結果
+        
