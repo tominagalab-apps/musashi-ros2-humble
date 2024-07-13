@@ -71,8 +71,8 @@ class PlayerServer(QThread):
             player_state.ball.angle = float(values[5])
             player_state.goal.distance = float(values[6])
             player_state.goal.angle = float(values[7])
-            player_state.myGoal.distance = float(values[8])
-            player_state.myGoal.angle = float(values[9])
+            player_state.my_goal.distance = float(values[8])
+            player_state.my_goal.angle = float(values[9])
             
             player_state.position.position.x = float(values[10])
             player_state.position.position.y = float(values[11])
