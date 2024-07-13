@@ -88,7 +88,9 @@ class RqtPlayerController(Plugin):
   
   def player_states_callback(self, player_states):
     for i, player_state in enumerate(player_states.players):
-      timestamp = str(player_state.header.stamp.sec) + '.' + str(player_state.header.stamp.nanosec)
-      self._pwidgets[i].lblTimeStamp.setText(timestamp)
+      
+      timestamp = str(player_state.header.stamp.sec) + '.' + '{:.3g}'.format(player_state.header.stamp.nanosec)
+      
+      self._pwidgets[i].lblTimeStamp.setText(timestamp) # timestampラベルに書き込み
       
     return
