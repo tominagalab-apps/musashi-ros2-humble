@@ -57,19 +57,18 @@ CALIB_COMPASS = 66
 class RqtPlayerServer(Plugin):
     def __init__(self, context):
         super(RqtPlayerServer, self).__init__(context)
-
         self.setObjectName('RqtPlayerServer')
-        self._context = context
-        self._node = context.node
+        self._context = context # 親クラスからコンテキストをもらう
+        self._node = context.node # 親クラスからノードの実態をもらう
 
         # レフェリーからのコマンド（musashi_msgs.msgのRefereeCmd型）
-        self.refcmd = RefereeCmd()
+        self._refcmd = RefereeCmd()
 
         # チームの情報（プレイヤー情報の配列）
-        self.player_states = PlayerStates()
+        self._player_states = PlayerStates()
 
         # チームカラー
-        self.team_color = CYAN
+        self._team_color = CYAN
 
         # ウィジェットインスタンスを作成
         # メンバ変数_widgetに.uiファイルが書き込まれる
@@ -152,162 +151,162 @@ class RqtPlayerServer(Plugin):
     # レフェリーボックスコマンドのサブスクライバ-コールバック関数
     def refcmd_callback(self, msg):
         self._node.get_logger.info(msg.command, msg.target_team)
-        self.refcmd = msg  # メンバ変数に格納
+        self._refcmd = msg  # メンバ変数に格納
 
         # hibikino-musashiチーム内のコマンドへ変換
-        if self.refcmd.command == 'START':
+        if self._refcmd.command == 'START':
             self.teamcmd = START
-        elif self.refcmd.command == 'STOP':
+        elif self._refcmd.command == 'STOP':
             self.teamcmd = STOP
-        elif self.refcmd.command == 'DROP_BALL':
+        elif self._refcmd.command == 'DROP_BALL':
             self.teamcmd = DROP_BALL
-        elif self.refcmd.command == 'HALF_TIMER':
+        elif self._refcmd.command == 'HALF_TIMER':
             pass
-        elif self.refcmd.command == 'END_GAME':
+        elif self._refcmd.command == 'END_GAME':
             pass
-        elif self.refcmd.command == 'GAME_OVER':
+        elif self._refcmd.command == 'GAME_OVER':
             pass
-        elif self.refcmd.command == 'PARK':
+        elif self._refcmd.command == 'PARK':
             pass
-        elif self.refcmd.command == 'FIRST_HALF':
+        elif self._refcmd.command == 'FIRST_HALF':
             self.teamcmd = FIRST
-        elif self.refcmd.command == 'SECOND_HALF':
+        elif self._refcmd.command == 'SECOND_HALF':
             self.teamcmd = SECOND
-        elif self.refcmd.command == 'FIRST_HALF_OVERTIME':
+        elif self._refcmd.command == 'FIRST_HALF_OVERTIME':
             pass
-        elif self.refcmd.command == 'SECOND_HALF_OVERTIME':
+        elif self._refcmd.command == 'SECOND_HALF_OVERTIME':
             pass
-        elif self.refcmd.command == 'WELCOME':
+        elif self._refcmd.command == 'WELCOME':
             self.teamcmd = WELCOME
-        elif self.refcmd.command == 'KICKOFF':
-            if self.refcmd.target_team == TEAM_IP:
-                if self.team_color == MAGENTA:
+        elif self._refcmd.command == 'KICKOFF':
+            if self._refcmd.target_team == TEAM_IP:
+                if self._team_color == MAGENTA:
                     self.teamcmd = KICKOFF_M
                 else:
                     self.teamcmd = KICKOFF_C
             else:  # 相手のキックオフなら
-                if self.team_color == MAGENTA:
+                if self._team_color == MAGENTA:
                     self.teamcmd = KICKOFF_C
                 else:
                     self.teamcmd = KICKOFF_M
-        elif self.refcmd.command == 'GOALKICK':
-            if self.refcmd.target_team == TEAM_IP:
-                if self.team_color == MAGENTA:
+        elif self._refcmd.command == 'GOALKICK':
+            if self._refcmd.target_team == TEAM_IP:
+                if self._team_color == MAGENTA:
                     self.teamcmd = GOAL_KICK_M
                 else:
                     self.teamcmd = GOAL_KICK_C
             else:  # 相手のキックオフなら
-                if self.team_color == MAGENTA:
+                if self._team_color == MAGENTA:
                     self.teamcmd = GOAL_KICK_C
                 else:
                     self.teamcmd = GOAL_KICK_M
-        elif self.refcmd.command == 'THROWIN':
-            if self.refcmd.target_team == TEAM_IP:
-                if self.team_color == MAGENTA:
+        elif self._refcmd.command == 'THROWIN':
+            if self._refcmd.target_team == TEAM_IP:
+                if self._team_color == MAGENTA:
                     self.teamcmd = THROWIN_M
                 else:
                     self.teamcmd = THROWIN_C
             else:  # 相手のキックオフなら
-                if self.team_color == MAGENTA:
+                if self._team_color == MAGENTA:
                     self.teamcmd = THROWIN_C
                 else:
                     self.teamcmd = THROWIN_M
-        elif self.refcmd.command == 'CORNER':
-            if self.refcmd.target_team == TEAM_IP:
-                if self.team_color == MAGENTA:
+        elif self._refcmd.command == 'CORNER':
+            if self._refcmd.target_team == TEAM_IP:
+                if self._team_color == MAGENTA:
                     self.teamcmd = CORNER_KICK_M
                 else:
                     self.teamcmd = CORNER_KICK_C
             else:  # 相手のコーナーキックなら
-                if self.team_color == MAGENTA:
+                if self._team_color == MAGENTA:
                     self.teamcmd = CORNER_KICK_C
                 else:
                     self.teamcmd = CORNER_KICK_M
-        elif self.refcmd.command == 'PENALTY':
-            if self.refcmd.target_team == TEAM_IP:
-                if self.team_color == MAGENTA:
+        elif self._refcmd.command == 'PENALTY':
+            if self._refcmd.target_team == TEAM_IP:
+                if self._team_color == MAGENTA:
                     self.teamcmd = PENALTY_M
                 else:
                     self.teamcmd = PENALTY_C
             else:  # 相手のキックオフなら
-                if self.team_color == MAGENTA:
+                if self._team_color == MAGENTA:
                     self.teamcmd = PENALTY_C
                 else:
                     self.teamcmd = PENALTY_M
-        elif self.refcmd.command == 'GOAL':
-            if self.refcmd.target_team == TEAM_IP:
-                if self.team_color == MAGENTA:
+        elif self._refcmd.command == 'GOAL':
+            if self._refcmd.target_team == TEAM_IP:
+                if self._team_color == MAGENTA:
                     self.teamcmd = GOAL_M
                 else:
                     self.teamcmd = GOAL_C
             else:  # 相手のキックオフなら
-                if self.team_color == MAGENTA:
+                if self._team_color == MAGENTA:
                     self.teamcmd = GOAL_C
                 else:
                     self.teamcmd = GOAL_M
-        elif self.refcmd.command == 'REPAIR':
-            if self.refcmd.target_team == TEAM_IP:
-                if self.team_color == MAGENTA:
+        elif self._refcmd.command == 'REPAIR':
+            if self._refcmd.target_team == TEAM_IP:
+                if self._team_color == MAGENTA:
                     pass
                 else:
                     pass
             else:  # 相手のキックオフなら
-                if self.team_color == MAGENTA:
+                if self._team_color == MAGENTA:
                     pass
                 else:
                     pass
-        elif self.refcmd.command == 'YELLOW_CARD':
-            if self.refcmd.target_team == TEAM_IP:
-                if self.team_color == MAGENTA:
-                    pass
-                else:
-                    pass
-            else:  # 相手のキックオフなら
-                if self.team_color == MAGENTA:
-                    pass
-                else:
-                    pass
-        elif self.refcmd.command == 'DOUBLE_YELLOW_CARD':
-            if self.refcmd.target_team == TEAM_IP:
-                if self.team_color == MAGENTA:
+        elif self._refcmd.command == 'YELLOW_CARD':
+            if self._refcmd.target_team == TEAM_IP:
+                if self._team_color == MAGENTA:
                     pass
                 else:
                     pass
             else:  # 相手のキックオフなら
-                if self.team_color == MAGENTA:
+                if self._team_color == MAGENTA:
                     pass
                 else:
                     pass
-        elif self.refcmd.command == 'RED_CARD':
-            if self.refcmd.target_team == TEAM_IP:
-                if self.team_color == MAGENTA:
-                    pass
-                else:
-                    pass
-            else:  # 相手のキックオフなら
-                if self.team_color == MAGENTA:
-                    pass
-                else:
-                    pass
-        elif self.refcmd.command == 'SUBSTITUTION':
-            if self.refcmd.target_team == TEAM_IP:
-                if self.team_color == MAGENTA:
+        elif self._refcmd.command == 'DOUBLE_YELLOW_CARD':
+            if self._refcmd.target_team == TEAM_IP:
+                if self._team_color == MAGENTA:
                     pass
                 else:
                     pass
             else:  # 相手のキックオフなら
-                if self.team_color == MAGENTA:
+                if self._team_color == MAGENTA:
                     pass
                 else:
                     pass
-        elif self.refcmd.command == 'IS_ALIVE':
-            if self.refcmd.target_team == TEAM_IP:
-                if self.team_color == MAGENTA:
+        elif self._refcmd.command == 'RED_CARD':
+            if self._refcmd.target_team == TEAM_IP:
+                if self._team_color == MAGENTA:
                     pass
                 else:
                     pass
             else:  # 相手のキックオフなら
-                if self.team_color == MAGENTA:
+                if self._team_color == MAGENTA:
+                    pass
+                else:
+                    pass
+        elif self._refcmd.command == 'SUBSTITUTION':
+            if self._refcmd.target_team == TEAM_IP:
+                if self._team_color == MAGENTA:
+                    pass
+                else:
+                    pass
+            else:  # 相手のキックオフなら
+                if self._team_color == MAGENTA:
+                    pass
+                else:
+                    pass
+        elif self._refcmd.command == 'IS_ALIVE':
+            if self._refcmd.target_team == TEAM_IP:
+                if self._team_color == MAGENTA:
+                    pass
+                else:
+                    pass
+            else:  # 相手のキックオフなら
+                if self._team_color == MAGENTA:
                     pass
                 else:
                     pass
@@ -317,10 +316,10 @@ class RqtPlayerServer(Plugin):
     # PlayerStatesをパブリッシュするタイマコールバック関数
     def player_states_publish_timer_callback(self,):
         # palyer_statesをパブリッシュ
-        self._pub_player_stats.publish(self.player_states)
+        self._pub_player_stats.publish(self._player_states)
 
         # 各プレイヤーのtfをブロードキャスト
-        for i, player_state in enumerate(self.player_states.players):
+        for i, player_state in enumerate(self._player_states.players):
             now = self._node.get_clock().now().to_msg()
             t = TransformStamped()
 
@@ -351,7 +350,7 @@ class RqtPlayerServer(Plugin):
         self._node.get_logger().debug('Player No:{}, states={}'.format(id, player_state))
 
         player_state.header.stamp = self._node.get_clock().now().to_msg()
-        self.player_states.players[id - 1] = player_state  # 配列に代入
+        self._player_states.players[id - 1] = player_state  # 配列に代入
 
         # 受信したらプレイヤーへの返信
         # 返信内容はコマンド＋全プレイヤーのデータ
@@ -359,7 +358,7 @@ class RqtPlayerServer(Plugin):
         send_data = struct.pack(
             'ii',
             5,  # aliveNum
-            self.team_color,  # color
+            self._team_color,  # color
         )
 
         # commandリスト作成,結合
@@ -375,90 +374,90 @@ class RqtPlayerServer(Plugin):
         # stateリスト結合
         send_data = send_data + struct.pack(
             'iiiii',
-            self.player_states.players[0].state,
-            self.player_states.players[1].state,
-            self.player_states.players[2].state,
-            self.player_states.players[3].state,
-            self.player_states.players[4].state
+            self._player_states.players[0].state,
+            self._player_states.players[1].state,
+            self._player_states.players[2].state,
+            self._player_states.players[3].state,
+            self._player_states.players[4].state
         )
 
         # ball_distanceリスト作成，結合
         send_data = send_data + struct.pack(
             'ddddd',
-            self.player_states.players[0].ball.distance,
-            self.player_states.players[1].ball.distance,
-            self.player_states.players[2].ball.distance,
-            self.player_states.players[3].ball.distance,
-            self.player_states.players[4].ball.distance,
+            self._player_states.players[0].ball.distance,
+            self._player_states.players[1].ball.distance,
+            self._player_states.players[2].ball.distance,
+            self._player_states.players[3].ball.distance,
+            self._player_states.players[4].ball.distance,
         )
 
         # ball_angleリスト作成，結合
         send_data = send_data + struct.pack(
             'ddddd',
-            self.player_states.players[0].ball.angle,
-            self.player_states.players[1].ball.angle,
-            self.player_states.players[2].ball.angle,
-            self.player_states.players[3].ball.angle,
-            self.player_states.players[4].ball.angle,
+            self._player_states.players[0].ball.angle,
+            self._player_states.players[1].ball.angle,
+            self._player_states.players[2].ball.angle,
+            self._player_states.players[3].ball.angle,
+            self._player_states.players[4].ball.angle,
         )
 
         # goal_distanceリスト作成，結合Ï
         send_data = send_data + struct.pack(
             'ddddd',
-            self.player_states.players[0].goal.distance,
-            self.player_states.players[1].goal.distance,
-            self.player_states.players[2].goal.distance,
-            self.player_states.players[3].goal.distance,
-            self.player_states.players[4].goal.distance,
+            self._player_states.players[0].goal.distance,
+            self._player_states.players[1].goal.distance,
+            self._player_states.players[2].goal.distance,
+            self._player_states.players[3].goal.distance,
+            self._player_states.players[4].goal.distance,
         )
 
         # goal_angleリスト作成，結合Ï
         send_data = send_data + struct.pack(
             'ddddd',
-            self.player_states.players[0].goal.angle,
-            self.player_states.players[1].goal.angle,
-            self.player_states.players[2].goal.angle,
-            self.player_states.players[3].goal.angle,
-            self.player_states.players[4].goal.angle,
+            self._player_states.players[0].goal.angle,
+            self._player_states.players[1].goal.angle,
+            self._player_states.players[2].goal.angle,
+            self._player_states.players[3].goal.angle,
+            self._player_states.players[4].goal.angle,
         )
 
         # my_goal.distanceリスト作成，結合Ï
         send_data = send_data + struct.pack(
             'ddddd',
-            self.player_states.players[0].my_goal.distance,
-            self.player_states.players[1].my_goal.distance,
-            self.player_states.players[2].my_goal.distance,
-            self.player_states.players[3].my_goal.distance,
-            self.player_states.players[4].my_goal.distance,
+            self._player_states.players[0].my_goal.distance,
+            self._player_states.players[1].my_goal.distance,
+            self._player_states.players[2].my_goal.distance,
+            self._player_states.players[3].my_goal.distance,
+            self._player_states.players[4].my_goal.distance,
         )
 
         # my_goal.angleリスト作成，結合Ï
         send_data = send_data + struct.pack(
             'ddddd',
-            self.player_states.players[0].my_goal.angle,
-            self.player_states.players[1].my_goal.angle,
-            self.player_states.players[2].my_goal.angle,
-            self.player_states.players[3].my_goal.angle,
-            self.player_states.players[4].my_goal.angle,
+            self._player_states.players[0].my_goal.angle,
+            self._player_states.players[1].my_goal.angle,
+            self._player_states.players[2].my_goal.angle,
+            self._player_states.players[3].my_goal.angle,
+            self._player_states.players[4].my_goal.angle,
         )
 
         # position.xリスト作成，結合Ï
         send_data = send_data + struct.pack(
             'ddddd',
-            self.player_states.players[0].position.position.x,
-            self.player_states.players[1].position.position.x,
-            self.player_states.players[2].position.position.x,
-            self.player_states.players[3].position.position.x,
-            self.player_states.players[4].position.position.x,
+            self._player_states.players[0].position.position.x,
+            self._player_states.players[1].position.position.x,
+            self._player_states.players[2].position.position.x,
+            self._player_states.players[3].position.position.x,
+            self._player_states.players[4].position.position.x,
         )
         # position.yリスト作成，結合Ï
         send_data = send_data + struct.pack(
             'ddddd',
-            self.player_states.players[0].position.position.y,
-            self.player_states.players[1].position.position.y,
-            self.player_states.players[2].position.position.y,
-            self.player_states.players[3].position.position.y,
-            self.player_states.players[4].position.position.y,
+            self._player_states.players[0].position.position.y,
+            self._player_states.players[1].position.position.y,
+            self._player_states.players[2].position.position.y,
+            self._player_states.players[3].position.position.y,
+            self._player_states.players[4].position.position.y,
         )
         # position.angleリスト作成，結合
         # クォータニオンからRPYに変換する必要がある
@@ -487,31 +486,31 @@ class RqtPlayerServer(Plugin):
         # haveBallリスト作成，結合
         send_data = send_data + struct.pack(
             'iiiii',
-            self.player_states.players[0].haveball,
-            self.player_states.players[1].haveball,
-            self.player_states.players[2].haveball,
-            self.player_states.players[3].haveball,
-            self.player_states.players[4].haveball
+            self._player_states.players[0].haveball,
+            self._player_states.players[1].haveball,
+            self._player_states.players[2].haveball,
+            self._player_states.players[3].haveball,
+            self._player_states.players[4].haveball
         )
         
          # moveto.xリスト作成，結合Ï
         send_data = send_data + struct.pack(
             'ddddd',
-            self.player_states.players[0].moveto.position.x,
-            self.player_states.players[1].moveto.position.x,
-            self.player_states.players[2].moveto.position.x,
-            self.player_states.players[3].moveto.position.x,
-            self.player_states.players[4].moveto.position.x,
+            self._player_states.players[0].moveto.position.x,
+            self._player_states.players[1].moveto.position.x,
+            self._player_states.players[2].moveto.position.x,
+            self._player_states.players[3].moveto.position.x,
+            self._player_states.players[4].moveto.position.x,
         )
         
         # moveto.yリスト作成，結合Ï
         send_data = send_data + struct.pack(
             'ddddd',
-            self.player_states.players[0].moveto.position.y,
-            self.player_states.players[1].moveto.position.y,
-            self.player_states.players[2].moveto.position.y,
-            self.player_states.players[3].moveto.position.y,
-            self.player_states.players[4].moveto.position.y,
+            self._player_states.players[0].moveto.position.y,
+            self._player_states.players[1].moveto.position.y,
+            self._player_states.players[2].moveto.position.y,
+            self._player_states.players[3].moveto.position.y,
+            self._player_states.players[4].moveto.position.y,
         )
         
         # moveto.angleリスト作成，結合
@@ -528,21 +527,21 @@ class RqtPlayerServer(Plugin):
         # oblstacle.distanceリスト作成，結合Ï
         send_data = send_data + struct.pack(
             'ddddd',
-            self.player_states.players[0].obstacle.distance,
-            self.player_states.players[1].obstacle.distance,
-            self.player_states.players[2].obstacle.distance,
-            self.player_states.players[3].obstacle.distance,
-            self.player_states.players[4].obstacle.distance,
+            self._player_states.players[0].obstacle.distance,
+            self._player_states.players[1].obstacle.distance,
+            self._player_states.players[2].obstacle.distance,
+            self._player_states.players[3].obstacle.distance,
+            self._player_states.players[4].obstacle.distance,
         )
 
         # obstacle.angleリスト作成，結合Ï
         send_data = send_data + struct.pack(
             'ddddd',
-            self.player_states.players[0].obstacle.angle,
-            self.player_states.players[1].obstacle.angle,
-            self.player_states.players[2].obstacle.angle,
-            self.player_states.players[3].obstacle.angle,
-            self.player_states.players[4].obstacle.angle,
+            self._player_states.players[0].obstacle.angle,
+            self._player_states.players[1].obstacle.angle,
+            self._player_states.players[2].obstacle.angle,
+            self._player_states.players[3].obstacle.angle,
+            self._player_states.players[4].obstacle.angle,
         )
         
         # state_vectorリスト作成，結合
@@ -550,20 +549,20 @@ class RqtPlayerServer(Plugin):
         # position.xリスト作成，結合Ï
         send_data = send_data + struct.pack(
             'ddddd',
-            self.player_states.players[0].position.position.x,
-            self.player_states.players[1].position.position.x,
-            self.player_states.players[2].position.position.x,
-            self.player_states.players[3].position.position.x,
-            self.player_states.players[4].position.position.x,
+            self._player_states.players[0].position.position.x,
+            self._player_states.players[1].position.position.x,
+            self._player_states.players[2].position.position.x,
+            self._player_states.players[3].position.position.x,
+            self._player_states.players[4].position.position.x,
         )
         # position.yリスト作成，結合Ï
         send_data = send_data + struct.pack(
             'ddddd',
-            self.player_states.players[0].position.position.y,
-            self.player_states.players[1].position.position.y,
-            self.player_states.players[2].position.position.y,
-            self.player_states.players[3].position.position.y,
-            self.player_states.players[4].position.position.y,
+            self._player_states.players[0].position.position.y,
+            self._player_states.players[1].position.position.y,
+            self._player_states.players[2].position.position.y,
+            self._player_states.players[3].position.position.y,
+            self._player_states.players[4].position.position.y,
         )
         # position.angleリスト作成，結合
         # クォータニオンからRPYに変換する必要がある
@@ -583,7 +582,6 @@ class RqtPlayerServer(Plugin):
 
     def role_dicision(self,):
         roles = [0, 0, 0, 0, 0]
-        
         
         
         #-----

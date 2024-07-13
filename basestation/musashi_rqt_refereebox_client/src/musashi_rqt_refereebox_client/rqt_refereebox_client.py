@@ -14,7 +14,6 @@ from musashi_msgs.msg import RefereeCmd
 PKG_NAME = 'musashi_rqt_refereebox_client'
 UI_FILE_NAME = 'refereebox_client.ui'
 
-
 class RqtRefereeBoxClient(Plugin):
     def __init__(self, context):
         # 親クラス(Pluginクラス)のコンストラクタ呼び出し

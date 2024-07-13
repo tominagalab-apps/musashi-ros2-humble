@@ -24,8 +24,9 @@ musashi-ros2-humble（ルートディレクトリ）
 ├── behavior
 ├── hardware
 ├── localization
-├── musashi_description  
+├── musashi_description
 ├── musashi_msgs
+├── others
 └── perception
 </pre>
 
