@@ -1,3 +1,3 @@
 std_msgs/Header header
 
-PlayerState[] players
+PlayerState[5] players

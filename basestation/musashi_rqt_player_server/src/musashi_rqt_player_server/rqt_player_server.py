@@ -26,7 +26,6 @@ class RqtPlayerServer(Plugin):
     
     # チームの情報（プレイヤー情報の配列）
     self.player_states = PlayerStates()
-    self.player_states.players.resize(5)
     
     # ウィジェットインスタンスを作成
     # メンバ変数_widgetに.uiファイルが書き込まれる
