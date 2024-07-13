@@ -9,19 +9,21 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED) # for create message
 find_package(std_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 
 # set "msg_files" list
 set(msg_files
   "msg/MotorState.msg"
   "msg/MotorStates.msg"
   "msg/RefereeCmd.msg"
+  "msg/Polar2D.msg"
   "msg/PlayerState.msg"
   "msg/PlayerStates.msg"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   ${msg_files}
-  DEPENDENCIES builtin_interfaces std_msgs
+  DEPENDENCIES builtin_interfaces std_msgs geometry_msgs
 )
 
 ament_export_dependencies(rosidl_default_runtime)

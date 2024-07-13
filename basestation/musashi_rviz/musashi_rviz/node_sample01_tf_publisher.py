@@ -10,7 +10,6 @@ import math
 PARENT_FRAME = 'map'
 CHILD_FRAME = 'player1/base_link'
 
-
 class Tf2Sample01(Node):
     def __init__(self):
         super().__init__('sample01_tf_publisher')
@@ -32,7 +31,7 @@ class Tf2Sample01(Node):
         t.header.frame_id = PARENT_FRAME
         t.child_frame_id = CHILD_FRAME
 
-        t.transform.translation.x = 0.0
+        t.transform.translation.x = 2.0
         t.transform.translation.y = 0.0
         t.transform.translation.z = 0.0
 

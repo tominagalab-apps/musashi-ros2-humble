@@ -8,9 +8,13 @@ from python_qt_binding.QtCore import QTimer, Slot
 from musashi_rqt_player_server.player_server import PlayerServer
 
 from musashi_msgs.msg import RefereeCmd
+from musashi_msgs.msg import PlayerState
+from musashi_msgs.msg import PlayerStates
 
 PKG_NAME = 'musashi_rqt_player_server'
 UI_FILE_NAME = 'player_server.ui'
+
+PUBLISH_RATE = 0.16 # 33Hz
 
 class RqtPlayerServer(Plugin):
   def __init__(self, context):
@@ -19,6 +23,10 @@ class RqtPlayerServer(Plugin):
     self.setObjectName('RqtPlayerServer')
     self._context = context
     self._node = context.node
+    
+    # チームの情報（プレイヤー情報の配列）
+    self.player_states = PlayerStates()
+    self.player_states.resize(5)
     
     # ウィジェットインスタンスを作成
     # メンバ変数_widgetに.uiファイルが書き込まれる
@@ -32,10 +40,9 @@ class RqtPlayerServer(Plugin):
       10
     )
     
-    # シグナル-スロット接続
-    self._player_server = PlayerServer()
-    self._player_server.recievedPlayerData.connect(self.onRecievedPlayerData)
-      
+    # PlayerServer作成，シグナルスロット接続，起動
+    self._player_server = PlayerServer() # PlayerServerインスタンス作成
+    self._player_server.recievedPlayerData.connect(self.onRecievedPlayerData) # シグナルスロット接続
     self._player_server.open()  # プレイヤーサーバのオープン
     self._player_server.start() # UDP通信の受信スレッド開始
     
@@ -45,6 +52,9 @@ class RqtPlayerServer(Plugin):
     
     # GUIスレッドのスタート
     self.start_ui_thread()
+    
+    # PlayerStatesをパブリッシュするタイマコールバックのスタート
+    self._node.timer = self._node.create_timer(PUBLISH_RATE, self.player_states_publish_timer_callback)
   
   def create_ui(self):
     # Qwidget型のメンバ変数作成
@@ -86,9 +96,19 @@ class RqtPlayerServer(Plugin):
   # refereebox_clientがパブリッシュした，レフェリーボックスコマンドのサブスクライバー
   def refcmd_callback(self, msg):
     self._node.get_logger.info(msg.command, msg.target_team)
+    
+  # PlayerStatesをパブリッシュするタイマコールバック関数
+  def player_states_publish_timer_callback(self,):
+    # self._node.get_logger().info('test')
+    return
   
   # PlayerServerクラスからシグナルが発行された時に実行されるスロット
-  @Slot(int,dict)
-  def onRecievedPlayerData(self, id, data):
-    self._node.get_logger().info(id, data)
+  # プレイヤーからデータを受信した際のスロット関数
+  # id: 受信したプレイヤーのid
+  # player_state: プレイヤーのデータ
+  @Slot(int, PlayerState)
+  def onRecievedPlayerData(self, id, player_state):
+    # self._node.get_logger().info(id, player_state)
+    self.player_states[id - 1] = player_state # 配列に代入
+    return
   

@@ -4,3 +4,9 @@ int32 action
 int32 state
 int32 role
 int32 haveball
+Polar2D ball
+Polar2D goal
+Polar2D myGoal
+Pose position
+Pose moveto
+Polar2D obstacle
