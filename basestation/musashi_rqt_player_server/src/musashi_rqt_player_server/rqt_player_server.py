@@ -108,6 +108,6 @@ class RqtPlayerServer(Plugin):
   @Slot(int, PlayerState)
   def onRecievedPlayerData(self, id, player_state):
     # self._node.get_logger().info(id, player_state)
-    self.player_states[id - 1] = player_state # 配列に代入
+    self.player_states.players[id - 1] = player_state # 配列に代入
     return
   

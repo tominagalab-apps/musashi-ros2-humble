@@ -51,14 +51,15 @@ class PlayerServer(QThread):
 
             # addrから送信元のプレイヤーのIDを割り出す
             # IPアドレスの下1桁でわかる
-            player_no = addr[0].split('.')[-1]
+            player_no = int(addr[0].split('.')[-1])
 
             # recvの文字列をカンマでスプリットする
             recv_str = recv.decode()  # bytesオブジェクトからstrオブジェクトへ変換
             values = recv_str.split(',')  # カンマで分割処理->文字列オブジェクトのリストオブジェクトになる
 
+            print('Player No={}'.format(player_no))
             print('recv(srt)=', recv_str)
-            print('splited=', values)
+            print('splited({})={}'.format(len(values), values))
 
             # PlayerState型に値を代入
             player_state = PlayerState()
@@ -97,7 +98,7 @@ class PlayerServer(QThread):
             player_state.moveto.orientation.w = qw
 
             player_state.obstacle.distance = float(values[18])
-            player_state.obstacle.angle = float(values[19])
+            # player_state.obstacle.angle = float(values[19])
 
             # リストから辞書に変換しておく
             # ついでに整数型に変換しておく
