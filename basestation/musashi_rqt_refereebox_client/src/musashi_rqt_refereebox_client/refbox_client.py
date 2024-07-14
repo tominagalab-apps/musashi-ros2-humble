@@ -14,7 +14,7 @@ MAX_RECV_SIZE = 1024*4  # byte
 class RefBoxClient(QThread):
 
     # シグナル定義
-    recievedCommand = Signal(str, str)
+    recievedCommand = Signal(bytes, str, str)
 
     # コンストラクタ
     def __init__(self,):
@@ -105,7 +105,7 @@ class RefBoxClient(QThread):
             ]
             balls.append(_ball)
         # data辞書にリストを追加．キー名は'balls'
-        data['balls'] = json_log(balls)
+        data['balls'] = json_log.make_balls(balls)
 
         # 障害物についてリストを作成する．ただし大会規定のワールド座標系に合わせないといけないので座標変換が必要
         # チーム内xy軸の定義と大会ルールの定義は異なっている
@@ -122,7 +122,7 @@ class RefBoxClient(QThread):
         data['obstacles'] = data_obstacles
 
         # 辞書型からjsonデータへ変換（パラメータはテキトウ）
-        json_data = json.dump(data, ensure_ascii=False, indent=4)
+        json_data = json.dumps(data, ensure_ascii=False, indent=4)
 
         # 送信処理
         self._socket.send(json_data.encode())  # encode()でバイナリデータに変換して送信
@@ -137,7 +137,7 @@ class RefBoxClient(QThread):
         while self._isRun:
             # RefereeBoxからのコマンド受信待ち
             recv = self._socket.recv(MAX_RECV_SIZE)
-
+            
             # コマンドは全てjson形式のテキストデータで送られてきます
             # データ末尾にはNULL（'\0'）が入れられているみたいです
             # 文字列（str）型の末尾１文字を削除している

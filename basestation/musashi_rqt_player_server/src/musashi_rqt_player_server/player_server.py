@@ -108,7 +108,8 @@ class PlayerServer(QThread):
             # シグナル発行
             self.recievedPlayerData.emit(player_no, player_state)
 
-    def send(self,):
+    def send(self, binary_data):
+        print(len(binary_data))
         return
 
     def euler_to_quaternion(self, roll, pitch, yaw):

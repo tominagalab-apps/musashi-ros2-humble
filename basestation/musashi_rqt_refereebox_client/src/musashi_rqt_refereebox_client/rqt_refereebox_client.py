@@ -185,18 +185,17 @@ class RqtRefereeBoxClient(Plugin):
 
             # 接続中フラグをFalseへ
             self.is_connected_refbox = False
-            
+
     # refereebox_clientがrefereeboxから受信した際に呼び出されるスロット関数
     def onRecievedCommand(self, recv, command, targetTeam):
-        self._node.get_logger().info('Recieved from RefereeBox')
         self._node.get_logger().info(
-            'command = {}, targetTeam = {}'.format(command, targetTeam))
+            'Recieved: command={}, targetTeam={}'.format(command, targetTeam))
 
         # GUIに受信した生テキストを表示
-        self._widget.txtRecv.setText(recv)
+        self._widget.txtRecv.setText(recv.decode('utf-8'))
 
         # RefereeCmdメッセージの作成
-        refereeCmd = RefereeCmd()  
+        refereeCmd = RefereeCmd()
 
         # 値の代入
         refereeCmd.command = command
@@ -205,15 +204,15 @@ class RqtRefereeBoxClient(Plugin):
         # refcmdメッセージをパブリッシュ．
         # player_serverに伝達することが目的
         self._pub_refcmd.publish(refereeCmd)
-    
-    #------------------------------
-    # スロット関数定義，ここまで
-    #------------------------------
 
+    # ------------------------------
+    # スロット関数定義，ここまで
+    # ------------------------------
 
     # ------------------------------
     # 以下，サブスクライバーのコールバック関数
     # ------------------------------
+
     def player_states_callback(self, player_states):
         self.player_states = player_states  # メンバ変数に保存
 

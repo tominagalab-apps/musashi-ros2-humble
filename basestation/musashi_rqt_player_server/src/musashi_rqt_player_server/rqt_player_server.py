@@ -150,7 +150,8 @@ class RqtPlayerServer(Plugin):
 
     # レフェリーボックスコマンドのサブスクライバ-コールバック関数
     def refcmd_callback(self, msg):
-        self._node.get_logger.info(msg.command, msg.target_team)
+        self._node.get_logger().info('command={}, targetTeam={}'.format(msg.command, msg.target_team))
+        
         self._refcmd = msg  # メンバ変数に格納
 
         # hibikino-musashiチーム内のコマンドへ変換
