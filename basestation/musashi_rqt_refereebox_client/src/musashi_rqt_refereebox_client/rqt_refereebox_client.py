@@ -24,6 +24,9 @@ class RqtRefereeBoxClient(Plugin):
         # コンテキストとノードのインスタンスを取得
         self._context = context
         self._node = context.node
+        
+        self._refbox_client = None
+        self.is_connected_refbox = False
 
         # ウィジェットインスタンスを作成，メンバ変数_widgetに.uiファイルが書き込まれる
         self.create_ui()
@@ -117,9 +120,9 @@ class RqtRefereeBoxClient(Plugin):
     def timer_callback(self,):
         
         # レフェリーボックスへログの送信を行う．周期的に送信する必要があるためタイマコールバックで実行することになる
-        # 全てのプレイヤーの情報はメンバ変数 self.player_states(PlayerStatesメッセージ型) に入っている
-        
-        
+        # 全てのプレイヤーの情報はメンバ変数 self.player_states(PlayerStatesメッセージ型) に入っている        
+        if self.is_connected_refbox == True:
+            self._refbox_client.send_log(self.player_states)
         
         return
 
@@ -149,6 +152,9 @@ class RqtRefereeBoxClient(Plugin):
                     self.onRecievedCommand)
                 # RefereeBox client スレッドのスタート
                 self._refbox_client.start()
+                
+                # 接続中フラグをTrueへ
+                self.is_connected_refbox = True
 
             else:  # 接続失敗時の処理
                 self._node.get_logger().error('Failed to connect to RefereeBox')
@@ -161,12 +167,18 @@ class RqtRefereeBoxClient(Plugin):
 
                 self._widget.chckConnect.setCheckState(False)
                 self._refbox_client = None
+                
+                # 接続中フラグをFalseへ
+                self.is_connected_refbox = False
 
         else:  # チェックが外れた → 切断処理
             # self._refbox_client.disconnect()
             # self._refbox_client.join()
             self._refbox_client = None  # デストラクタの呼び出し
             # pythonでは一応自動的にメモリ解放されるっぽい
+            
+            # 接続中フラグをFalseへ
+            self.is_connected_refbox = False
 
     # refereebox_clientがrefereeboxから受信した際に呼び出されるスロット関数
     def onRecievedCommand(self, recv, command, targetTeam):
