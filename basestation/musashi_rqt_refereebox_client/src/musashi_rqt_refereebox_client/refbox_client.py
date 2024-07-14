@@ -3,25 +3,13 @@ from python_qt_binding.QtCore import QThread, Signal
 import socket
 from datetime import datetime, timezone
 import json
-import numpy as np
-from scipy.spatial.transform import Rotation
-import math
 
 from musashi_msgs.msg import PlayerState
 from musashi_msgs.msg import PlayerStates
 
 from musashi_rqt_refereebox_client import json_log
 
-TEAM_IP = '172.16.32.44'  # チームに割り振られた固有IP（コーチボックスに設定するアドレスではありません）
 MAX_RECV_SIZE = 1024*4  # byte
-
-# ポジションの座標変換行列
-TRANSFORM_MATRIX = np.array([
-    [-1, 0, 0],
-    [0, -1, 0],
-    [0, 0, -1]
-])
-
 
 class RefBoxClient(QThread):
 

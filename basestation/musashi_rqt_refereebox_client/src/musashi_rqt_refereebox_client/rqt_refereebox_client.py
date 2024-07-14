@@ -13,53 +13,35 @@ from musashi_msgs.msg import RefereeCmd, PlayerState, PlayerStates
 PKG_NAME = 'musashi_rqt_refereebox_client'
 UI_FILE_NAME = 'refereebox_client.ui'
 
+GUI_UPDATE_PERIOD = 0.033  # GUIの更新周期[s]
+PERIOD = 0.25  # タイマコールバックの実行周期[s]
+
+
 class RqtRefereeBoxClient(Plugin):
     def __init__(self, context):
-        # 親クラス(Pluginクラス)のコンストラクタ呼び出し
-        super(RqtRefereeBoxClient, self).__init__(context)
-        # 自分の名前を設定
-        self.setObjectName('RqtRefereeBoxClient')
-        # コンテキストとノードのインスタンスを取得
-        self._context = context
-        self._node = context.node
-        
+        super(RqtRefereeBoxClient, self).__init__(
+            context)  # 親クラス(Pluginクラス)のコンストラクタ呼び出し
+        self.setObjectName('RqtRefereeBoxClient')  # 自分の名前を設定
+        self._context = context  # コンテキストインスタンスをメンバ変数へ
+        self._node = context.node  # ノードインスタンスをメンバ変数へ
+
+        #
+        # メンバ変数の作成
+        #
         self._refbox_client = None
         self.is_connected_refbox = False
 
-        # UIをロード，描画領域に追加
-        self.create_ui()
+        #
+        #
+        #
+        self.create_ui()  # UIをロード，描画領域に追加
+        self.connect_signals_slots()  # GUIのシグナルスロット接続
+        self.create_publishers()  # パブリッシャーの作成
+        self.create_subscribers()  # サブスクライバーの作成
 
-        # ------------------------------
-        # GUIシグナルスロット接続処理
-        # ------------------------------
-        # connectボタンの状態変化時のシグナルスロット接続
-        # chchConnectの状態が変化するとonStateChangedChckConnect関数が呼び出される
-        self._widget.chckConnect.stateChanged.connect(
-            self.onStateChangedChckConnect)
-        # ------------------------------
-        # GUIシグナルスロット接続処理，ここまで
-        # ------------------------------
-
-        # ------------------------------
-        # パブリッシャー作成
-        # ------------------------------
-        # レフェリーからのコマンドをRefereeCmdメッセージでパブリッシュするためのパブリッシャーを定義
-        self._pub_refcmd = self._node.create_publisher(
-            RefereeCmd, '/referee_cmd', 5)
-
-        # ------------------------------
-        # サブスクライバー作成
-        # ------------------------------
-        # player_statesのサブスクライバー
-        self._sub_player_states = self._node.create_subscription(
-            PlayerStates,
-            '/player_states',
-            self.player_states_callback,
-            5
-        )
-        
-        # タイマーコールバックのスタート
-        self._node.timer = self._node.create_timer(1.0, self.timer_callback)
+        # タイマコールバックのスタート
+        self._node.timer = self._node.create_timer(PERIOD,
+                                                   self.timer_callback)
 
         # GUIスレッドのスタート
         self.start_ui_thread()
@@ -68,14 +50,14 @@ class RqtRefereeBoxClient(Plugin):
     def create_ui(self):
         # Qwidget型のメンバ変数作成
         self._widget = QWidget()
-        
+
         # パッケージ名からパッケージのディレクトリパスを取得
         _, package_path = get_resource('packages', PKG_NAME)
-        
+
         # .uiファイルへのパスを作成，取得
         ui_file = os.path.join(package_path, 'share',
                                PKG_NAME, 'resource', UI_FILE_NAME)
-        
+
         # .uiファイルをQWidget型メンバ変数にロード
         loadUi(ui_file, self._widget)
 
@@ -87,6 +69,32 @@ class RqtRefereeBoxClient(Plugin):
         # コンテキストに作成したウィジェットを追加．これをしないとGUI画面が表示されない
         self._context.add_widget(self._widget)
 
+    def connect_signals_slots(self):
+        # chckConnect
+        # stateChangedシグナルをonStateChangedChckConnectスロットへ接続
+        self._widget.chckConnect.stateChanged.connect(
+            self.onStateChangedChckConnect)
+        return
+
+    def create_publishers(self,):
+        # referee_cmdのパブリッシャ作成
+        self._pub_refcmd = self._node.create_publisher(
+            RefereeCmd,
+            '/referee_cmd',
+            5)
+        #
+        return
+
+    def create_subscribers(self,):
+        # player_statesのサブスクライバー
+        self._sub_player_states = self._node.create_subscription(
+            PlayerStates,
+            '/player_states',
+            self.player_states_callback,
+            5
+        )
+        return
+
     def start_ui_thread(self):
         # QTimerのtimeoutシグナルが発行されるたびにQWidgetのupdateスロットが実行される
         # これをしないと各ウィジェットのシグナルが発行された時に認識されない
@@ -95,8 +103,8 @@ class RqtRefereeBoxClient(Plugin):
         self._timer = QTimer()
         # timeoutシグナルをupdateスロットに接続
         self._timer.timeout.connect(self._widget.update)
-        # 16msec周期（33Hz）で画面更新
-        self._timer.start(16)
+        # QTimerスタート
+        self._timer.start(int(GUI_UPDATE_PERIOD*1000.0))
 
     # シャットダウン時処理
     def shutdown_plugin(self):
@@ -115,14 +123,14 @@ class RqtRefereeBoxClient(Plugin):
     # ノードのタイマコールバック関数
     # ------------------------------
     def timer_callback(self,):
-        
+        # self._node.get_logger().info('timer callback')
+
         # レフェリーボックスへログの送信を行う．周期的に送信する必要があるためタイマコールバックで実行することになる
-        # 全てのプレイヤーの情報はメンバ変数 self.player_states(PlayerStatesメッセージ型) に入っている        
+        # 全てのプレイヤーの情報はメンバ変数 self.player_states(PlayerStatesメッセージ型) に入っている
         if self.is_connected_refbox == True:
             self._refbox_client.send_jsonlog(self.player_states)
-        
-        return
 
+        return
 
     # ------------------------------
     # 以下，スロット関数
@@ -150,7 +158,7 @@ class RqtRefereeBoxClient(Plugin):
                     self.onRecievedCommand)
                 # RefereeBox client スレッドのスタート
                 self._refbox_client.start()
-                
+
                 # 接続中フラグをTrueへ
                 self.is_connected_refbox = True
 
@@ -165,7 +173,7 @@ class RqtRefereeBoxClient(Plugin):
 
                 self._widget.chckConnect.setCheckState(False)
                 self._refbox_client = None
-                
+
                 # 接続中フラグをFalseへ
                 self.is_connected_refbox = False
 
@@ -174,10 +182,10 @@ class RqtRefereeBoxClient(Plugin):
             # self._refbox_client.join()
             self._refbox_client = None  # デストラクタの呼び出し
             # pythonでは一応自動的にメモリ解放されるっぽい
-            
+
             # 接続中フラグをFalseへ
             self.is_connected_refbox = False
-
+            
     # refereebox_clientがrefereeboxから受信した際に呼び出されるスロット関数
     def onRecievedCommand(self, recv, command, targetTeam):
         self._node.get_logger().info('Recieved from RefereeBox')
@@ -187,23 +195,28 @@ class RqtRefereeBoxClient(Plugin):
         # GUIに受信した生テキストを表示
         self._widget.txtRecv.setText(recv)
 
-        # メッセージの作成
-        refereeCmd = RefereeCmd()  # musashi_msgsパッケージでRefereeCmdメッセージが定義されている
+        # RefereeCmdメッセージの作成
+        refereeCmd = RefereeCmd()  
 
         # 値の代入
         refereeCmd.command = command
         refereeCmd.target_team = targetTeam
 
         # refcmdメッセージをパブリッシュ．
-        # player_serverのノードに伝達することが主目的
+        # player_serverに伝達することが目的
         self._pub_refcmd.publish(refereeCmd)
+    
+    #------------------------------
+    # スロット関数定義，ここまで
+    #------------------------------
+
 
     # ------------------------------
     # 以下，サブスクライバーのコールバック関数
     # ------------------------------
     def player_states_callback(self, player_states):
-        self.player_states = player_states # メンバ変数に保存
-        
+        self.player_states = player_states  # メンバ変数に保存
+
         # ここではレフェリーボックスへログのjsonを送信しないほうがいい
         # (理由)rqt_player_serverのplayer_statesパブリッシュの周期に依存して送信してしまうので
         return
