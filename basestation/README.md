@@ -1,7 +1,9 @@
 [Home](../README.md)  
 # basestation（旧コーチボックス）  
 コーチボックス関係のパッケージを配置しているディレクトリです．  
-basestationは以下の二つの画面で構成されている．  
+basestationは以下の二つの画面で構成されている．両方の画面を起動することで試合の状態が可視化される．  
+なお，**両画面を出さない限りRefereeBox->basestation->playerへのコマンド通信がされず試合ができないので注意すること**    
+
 |Display|Description|  
 |---|---|
 |rviz|rviz上に3Dでフィールドおよびプレイヤーを表示する画面．試合中の状態を可視化する．|  
@@ -11,6 +13,7 @@ basestationは以下の二つの画面で構成されている．
 ### rviz画面  
 以下をターミナルで実行することで設定済みのrviz2が起動する．  
 `ros2 launch musashi_rviz bringup_launch.py`  
+[bringup_launch.py](./musashi_rviz/launch/bringup_launch.py)はpythonで記述したlaunchファイルである．  
 ### rqt画面  
 以下をターミナルで実行する．  
 `rqt`  
@@ -40,8 +43,8 @@ basestation
 ## RefereeBoxとCoachBox間通信について
 RefereeBoxとはTCPで送受信を行います．  
 ### コマンドフォーマット詳細  
-- RefereeBoxからはJSON形式の文字列データがバイナリデータで送られてきます．
-- JSONフォーマットは以下の形式を持ちます  
+- RefereeBoxからはJSON形式の文字列データがバイナリデータで送られてくる．  
+- JSON形式は次のようになる    
 ```
 {
   command: {コマンド文字列}
@@ -56,7 +59,8 @@ RefereeBoxとはTCPで送受信を行います．
   - ターゲットチーム文字列（"224.16.32.*"）が入っている場合は，そのチームにするコマンドになります．  
   （例）commandが"KICKOFF"で，targetTeamが"224.16.32.44"の場合は，チームHibikino-Musashiがキックオフであることを意味するので，自チームのキックオフポジションに移動し，"START"コマンドを待機する必要がある． 
 
-### コマンド一覧  
+### コマンド文字列一覧  
+レフェリーボックスからは以下のコマンド文字列が送られてきます．  
 |command|targetTeam|  
 |-------|----------|  
 |"START"|""|  
@@ -71,20 +75,20 @@ RefereeBoxとはTCPで送受信を行います．
 |"FIRST_HALF_OVERTIME"|""|
 |"SECOND_HALF_OVERTIME"|""|
 |"RESET"|""|
-|WELCOME|"224.16.32.*"|
-|KICKOFF|"224.16.32.*"|
-|FREEKICK|"224.16.32.*"|
-|GOALKICK|"224.16.32.*"|
-|THROWIN|"224.16.32.*"|
-|CORNER|"224.16.32.*"|
-|PENALTY|"224.16.32.*"|
-|GOAL|"224.16.32.*"|
-|REPAIR|"224.16.32.*"|
-|YELLOW_CARD|"224.16.32.*"|
-|DOUBLE_YELLOW|"224.16.32.*"|
-|RED_CARD|"224.16.32.*"|
-|SUBSTITUTION|"224.16.32.*"|
-|IS_ALIVE|"224.16.32.*"|
+|"WELCOME"|"224.16.32.*"|
+|"KICKOFF"|"224.16.32.*"|
+|"FREEKICK"|"224.16.32.*"|
+|"GOALKICK"|"224.16.32.*"|
+|"THROWIN"|"224.16.32.*"|
+|"CORNER"|"224.16.32.*"|
+|"PENALTY"|"224.16.32.*"|
+|"GOAL"|"224.16.32.*"|
+|"REPAIR"|"224.16.32.*"|
+|"YELLOW_CARD"|"224.16.32.*"|
+|"DOUBLE_YELLO"W|"224.16.32.*"|
+|"RED_CARD"|"224.16.32.*"|
+|"SUBSTITUTION"|"224.16.32.*"|
+|"IS_ALIVE"|"224.16.32.*"|
 
 ## CoachBoxとPlayer間の通信について  
 CoachBoxとPlayerはUDPで通信を行っています．  

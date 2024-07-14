@@ -53,7 +53,7 @@ class RefBoxClient(QThread):
             return False
 
         # 接続完了した時刻を記録する（UTC）
-        self.connected_time = datetime.now(timezone.utc())
+        self.connected_time = datetime.now(timezone.utc)
 
         # 無事にサーバ（RefereeBox）へ接続ができれば，RefereeBox側で反応がある
         return True  # 接続完了を表す
