@@ -41,8 +41,10 @@ basestation
 |musashi_rviz|試合の状態を確認するrviz画面を構成するためのパッケージ|
 
 ## RefereeBoxとCoachBox間通信について
-RefereeBoxとはTCPで送受信を行います．  
-### コマンドフォーマット詳細  
+RefereeBoxとはTCPで送受信を行います．
+### RefereeBox→basestation
+レフェリーボックスからはゲームコマンドが送られてきます．  
+#### コマンドフォーマット詳細  
 - RefereeBoxからはJSON形式の文字列データがバイナリデータで送られてくる．  
 - JSON形式は次のようになる    
 ```
@@ -59,7 +61,7 @@ RefereeBoxとはTCPで送受信を行います．
   - ターゲットチーム文字列（"224.16.32.*"）が入っている場合は，そのチームにするコマンドになります．  
   （例）commandが"KICKOFF"で，targetTeamが"224.16.32.44"の場合は，チームHibikino-Musashiがキックオフであることを意味するので，自チームのキックオフポジションに移動し，"START"コマンドを待機する必要がある． 
 
-### コマンド文字列一覧  
+#### コマンド文字列一覧  
 レフェリーボックスからは以下のコマンド文字列が送られてきます．  
 |command|targetTeam|  
 |-------|----------|  
@@ -89,6 +91,21 @@ RefereeBoxとはTCPで送受信を行います．
 |"RED_CARD"|"224.16.32.*"|
 |"SUBSTITUTION"|"224.16.32.*"|
 |"IS_ALIVE"|"224.16.32.*"|
+
+### basestation→RefereeBox
+basestationはRefereeBoxに所定のjson形式のログファイルを周期的に送信しなければならない．  
+送信時における通信仕様の詳細は[MSL_WMDataStruct](https://msl.robocup.org/wp-content/uploads/2018/08/MSL_WMDataStruct.pdf)を参照すること．  
+#### 送信データの概要
+以下のデータを指定のjson形式で送る必要がある.  
+- 全ロボットのデータ 
+  - ID（1~5の整数）
+  - 現在姿勢（x[m], y[m], theta[rad]）
+  - 目標姿勢（x[m], y[m], theta[rad]）
+  - バッテリー残量[%]
+  - ボール保持（0:未保持, 1:保持）
+- ボールのデータ
+  - ワールド座標系におけるボール位置（x[m], y[m], z[m]）
+  - 
 
 ## CoachBoxとPlayer間の通信について  
 CoachBoxとPlayerはUDPで通信を行っています．  
