@@ -1,28 +1,40 @@
 # basestation（旧コーチボックス）  
-コーチボックス関係のパッケージを配置しているディレクトリです．
+コーチボックス関係のパッケージを配置しているディレクトリです．  
+basestationは以下の二つの画面で構成されている．  
+|Display|Description|  
+|---|---|
+|rviz|rviz上に3Dでフィールドおよびプレイヤーを表示する画面．試合中の状態を可視化する．|  
+|rqt|GUI画面．レフェリーボックスとの通信や，各プレイヤーとの通信を担当する．| 
 
 ## 実行方法  
-各パッケージはrqt_guiのプラグインとして開発されているので，  
-1. rqtを起動する．ターミナルで`rqt`を実行   
-1. 左上`Plugins`メニューから各プラグインを読み込む  
-
-の手順でbasestation用の画面が完成する．  
+### rviz画面  
+以下をターミナルで実行することで設定済みのrviz2が起動する．  
+`ros2 launch musashi_rviz bringup_launch.py`  
+### rqt画面  
+以下をターミナルで実行する．  
+`rqt`  
+空のrqt_gui画面が出るはずなので，左上の"Plugins"から以下の三つのプラグインをロードする．  
+1. Hibikino-Musashiの**RefereeBoxClient**  
+1. Hibikino-Musashiの**PlayerServer**  
+1. Hibikino-Musashiの**PlayerController**  
 
 ## ディレクトリ構成  
 <pre>
 basestation
 ├── README.md
+├── musashi_rqt_player_controller
 ├── musashi_rqt_player_server
 ├── musashi_rqt_refereebox_client
-└── musashi_rqt_player_controller
+└── musashi_rviz
 </pre>
 
 ## パッケージリスト  
 |Package name|Description|
 |---|---|
-|musashi_rqt_player_controller|各プレイヤーへのデータ送信を行うパッケージ|
-|musashi_rqt_player_server|各プレイヤーからのデータ受信を行うパッケージ|  
-|musashi_rqt_refereebox_client| レフェリーボックスと通信を行うパッケージ|  
+|musashi_rqt_player_controller|各プレイヤーへのデータ送信を行うパッケージ．rqtプラグインとして開発している|
+|musashi_rqt_player_server|各プレイヤーからのデータ受信を行うパッケージ．rqtプラグインとして開発している|  
+|musashi_rqt_refereebox_client|レフェリーボックスと通信を行うパッケージ．rqtプラグインとして開発している|  
+|musashi_rviz|試合の状態を確認するrviz画面を構成するためのパッケージ|
 
 ## RefereeBoxとCoachBox間通信について
 RefereeBoxとはTCPで送受信を行います．  

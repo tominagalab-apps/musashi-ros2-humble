@@ -1,7 +1,7 @@
 # musashi-ros2-humble
 本パッケージは Robocup Hibikino-Musashi のROS2用リポジトリになります．
 Visual Studioを用いたC++のみの開発に限界を感じてきたため，
-レフェリーボックスの仕様変更に合わせて新たなUbuntuベースのHibikino-musashiとすべく，開発を開始する．    
+レフェリーボックスの仕様変更に合わせて新たなUbuntuベースのHibikino-musashiとすべく開発を開始する．    
 
 ## 開発環境  
 - OSディストリビューション: Ubuntu 22.04  
@@ -33,12 +33,13 @@ musashi-ros2-humble（ルートディレクトリ）
 |Name|Detail|  
 |---|---|
 |README.md|このファイル|
-|basestation|レフェリーボックス・プレイヤーとの通信，GUIを含むパッケージのディレクトリ|
+|basestation|GUIを含むbasestation（旧コーチボックス）用パッケージを含める|
 |behavior|ルールベース行動決定，ステートマシン，行動選択のディレクトリ|
-|hardware|外部デバイス制御用のディレクトリ|
+|hardware|外部デバイス制御用のディレクトリ．カメラやモータ，各種センサを扱うためのパッケージを含める|
 |localization|自己位置推定用のディレクトリ|
 |musashi_description|ロボットモデルを管理するディレクトリ|  
 |musashi_msgs|独自メッセージ用のディレクトリ|
+|others|特に用はない（富永用）|
 |perception|外界認識，知覚系のディレクトリ|
 
 ## ビルドコマンド  
