@@ -107,7 +107,7 @@ class PlayerServer(QThread):
             # player_state.obstacle.angle = float(values[19])
 
             # シグナル発行
-            self.recievedPlayerData.emit(player_no, player_state)
+            self.recievedPlayerData.emit(player_state.id, player_state)
 
     def send(self, binary_data):
         print(len(binary_data))

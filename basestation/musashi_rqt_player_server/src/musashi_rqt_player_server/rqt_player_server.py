@@ -69,6 +69,9 @@ class RqtPlayerServer(Plugin):
 
         # チームカラー
         self._team_color = CYAN
+        
+        # チームコマンドの初期化
+        self.teamcmd = STOP
 
         # ウィジェットインスタンスを作成
         # メンバ変数_widgetに.uiファイルが書き込まれる
@@ -88,6 +91,7 @@ class RqtPlayerServer(Plugin):
             '/player_states',
             10
         )
+        
 
         # tfブロードキャスター作成
         self.br = tf2_ros.TransformBroadcaster(self._node)
@@ -348,7 +352,7 @@ class RqtPlayerServer(Plugin):
     # player_state: プレイヤーのデータ
     @Slot(int, PlayerState)
     def onRecievedPlayerData(self, id, player_state):
-        self._node.get_logger().debug('Player No:{}, states={}'.format(id, player_state))
+        self._node.get_logger().info('Player No:{}, states={}'.format(id, player_state))
 
         player_state.header.stamp = self._node.get_clock().now().to_msg()
         self._player_states.players[id - 1] = player_state  # 配列に代入
@@ -581,7 +585,7 @@ class RqtPlayerServer(Plugin):
 
         return
 
-    def role_dicision(self,):
+    def roles_dicision(self,):
         roles = [0, 0, 0, 0, 0]
         
         
