@@ -65,7 +65,6 @@ class RqtRefereeBoxClient(Plugin):
         # ------------------------------
         self._node.timer = self._node.create_timer(1.0, self.timer_callback)
 
-
         # GUIスレッドのスタート
         self.start_ui_thread()
 
@@ -122,7 +121,7 @@ class RqtRefereeBoxClient(Plugin):
         # レフェリーボックスへログの送信を行う．周期的に送信する必要があるためタイマコールバックで実行することになる
         # 全てのプレイヤーの情報はメンバ変数 self.player_states(PlayerStatesメッセージ型) に入っている        
         if self.is_connected_refbox == True:
-            self._refbox_client.send_log(self.player_states)
+            self._refbox_client.send_jsonlog(self.player_states)
         
         return
 
@@ -147,6 +146,7 @@ class RqtRefereeBoxClient(Plugin):
 
             if isConnect:  # 接続成功時の処理
                 self._node.get_logger().info('Successfully connected to RefereeBox')
+
                 # レフェリーからコマンド受信時のシグナルスロット接続
                 self._refbox_client.recievedCommand.connect(
                     self.onRecievedCommand)
