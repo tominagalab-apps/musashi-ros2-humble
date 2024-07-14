@@ -9,6 +9,22 @@ Visual Studioを用いたC++のみの開発に限界を感じてきたため，
 - IDE: Visual Studio Code（エディタ）  
 - 言語: python，C++  
 
+## ビルド  
+- 全パッケージの一括ビルド  
+ターミナルでワークスペースのルートディレクトリ（colcon_ws）に入ってから以下を実行する．  
+`colcon build --symlink-install`  
+
+- basestation（旧コーチボックス）関連のみビルド  
+以下コマンドで関連パッケージの一括ビルド． 
+NeoAPIライブラリやMaxonEPOSライブラリを未インストールなPCでbasestationだけ動かしたい場合は便利．   
+``colcon build --symlink-install --packages-select musashi_rqt_player_server musashi_rqt_refereebox_client musashi_player_controller musashi_rviz `` 
+
+## 実行  
+- player  
+（※開発中）  
+- basestation(旧コーチボックス)  
+[basestation/README.md](/basestation/README.md)の**実行方法**を参照すること  
+
 ## コーディング規約（命名規則） 
 ### python   
 PEP8コードスタイルに準拠する．
@@ -42,15 +58,6 @@ musashi-ros2-humble（ルートディレクトリ）
 |others|特に用はない（富永用）|
 |perception|外界認識，知覚系のディレクトリ|
 
-## ビルドコマンド  
-- 全パッケージの一括ビルド  
-ワークスペースのルートディレクトリで以下を実行する．  
-`colcon build --symlink-install`  
-
-- basestation（旧コーチボックス）関連のみビルド  
-以下コマンドで関連パッケージの一括ビルド． 
-NeoAPIライブラリやMaxonEPOSライブラリを未インストールなPCでbasestationだけ動かしたい場合は便利．   
-``colcon build --packages-select musashi_rqt_player_server musashi_rqt_refereebox_client player_controller ``  
 
 ## パッケージ作成コマンド例  
 - pythonパッケージ  
