@@ -45,6 +45,7 @@ class PlayerServer(QThread):
 
         while self._isRun:
             # 受信処理（ブロッキングモード）
+            print('wait player ...')
             recv, addr = self._socket.recvfrom(MAX_RECV_SIZE)
             # recvには受信したデータ（文字列）
             # addrには送信元のアドレス（文字列）が入っている

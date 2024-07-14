@@ -16,7 +16,6 @@ UI_FILE_NAME = 'refereebox_client.ui'
 GUI_UPDATE_PERIOD = 0.033  # GUIの更新周期[s]
 PERIOD = 0.25  # タイマコールバックの実行周期[s]
 
-
 class RqtRefereeBoxClient(Plugin):
     def __init__(self, context):
         super(RqtRefereeBoxClient, self).__init__(

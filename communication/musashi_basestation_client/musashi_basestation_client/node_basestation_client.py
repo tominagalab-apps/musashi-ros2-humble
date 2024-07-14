@@ -12,10 +12,10 @@ class BasestationClientNode(Node):
         super().__init__('node_basestation_client')
         
         # インスタンス作成
-        basestation_client = BaseStationClient()
+        self.basestation_client = BaseStationClient()
         
-        # スレッドのスタート
-        basestation_client.start()
+        # スレッドのスタート（いらないのでは）
+        # basestation_client.start()
         
         # サブスクライバー作成
         self._sub_player_state = self.create_subscription(
@@ -25,7 +25,22 @@ class BasestationClientNode(Node):
             10,
         )
         
-    def player_state_callback(self):
+        # タイマコールバック関数の開始
+        self._timer = self.create_timer(0.033, self.timer_callback)
+        
+    def player_state_callback(self, player_state):
+        self._player_state = player_state # メンバ変数に保存
+        return
+    
+    def timer_callback(self):
+        self.get_logger().info('timer callback')
+        
+        # 送信処理
+        self.basestation_client.send()
+        
+        # 返信の受信処理
+        self.basestation_client.recv()
+        
         return
 
 
