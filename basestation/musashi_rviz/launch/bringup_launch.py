@@ -8,9 +8,9 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from ament_index_python.packages import get_package_share_directory
 import os
 
-colcon_ws_path = '/home/ubuntu/colcon_ws'
+# colcon_ws_path = '/home/ubuntu/colcon_ws'
 # colcon_ws_path = '/home/aviken/colcon_ws'
-
+colcon_ws_path = os.environ.get('HOME') + '/colcon_ws'
 
 def generate_launch_description():
 
