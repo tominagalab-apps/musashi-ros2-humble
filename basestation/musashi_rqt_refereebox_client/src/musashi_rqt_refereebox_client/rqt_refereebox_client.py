@@ -10,6 +10,7 @@ from python_qt_binding.QtWidgets import QErrorMessage
 from musashi_rqt_refereebox_client.refbox_client import RefBoxClient
 
 from musashi_msgs.msg import RefereeCmd
+from musashi_msgs.msg import PlayerStates
 
 PKG_NAME = 'musashi_rqt_refereebox_client'
 UI_FILE_NAME = 'refereebox_client.ui'
@@ -18,30 +19,49 @@ class RqtRefereeBoxClient(Plugin):
     def __init__(self, context):
         # 親クラス(Pluginクラス)のコンストラクタ呼び出し
         super(RqtRefereeBoxClient, self).__init__(context)
-
         # 自分の名前を設定
         self.setObjectName('RqtRefereeBoxClient')
         # コンテキストとノードのインスタンスを取得
         self._context = context
         self._node = context.node
 
-        # ウィジェットインスタンスを作成
-        # メンバ変数_widgetに.uiファイルが書き込まれる
+        # ウィジェットインスタンスを作成，メンバ変数_widgetに.uiファイルが書き込まれる
         self.create_ui()
 
-        # GUIシグナルスロット接続
+        # ------------------------------
+        # GUIシグナルスロット接続処理
+        # ------------------------------
         # connectボタンの状態変化時のシグナルスロット接続
+        # chchConnectの状態が変化するとonStateChangedChckConnect関数が呼び出される
         self._widget.chckConnect.stateChanged.connect(
             self.onStateChangedChckConnect)
+        # ------------------------------
+        # GUIシグナルスロット接続処理，ここまで
+        # ------------------------------
 
+        # ------------------------------
         # パブリッシャー作成
+        # ------------------------------
         # レフェリーからのコマンドをRefereeCmdメッセージでパブリッシュするためのパブリッシャーを定義
         self._pub_refcmd = self._node.create_publisher(
             RefereeCmd, '/referee_cmd', 5)
 
-        # コンテキストに作成したウィジェットを追加
-        # これをしないとGUI画面が表示されない
-        self._context.add_widget(self._widget)
+        # ------------------------------
+        # サブスクライバー作成
+        # ------------------------------
+        # player_statesのサブスクライバー
+        self._sub_player_states = self._node.create_subscription(
+            PlayerStates,
+            '/player_states',
+            self.player_states_callback,
+            5
+        )
+        
+        # ------------------------------
+        # タイマーコールバック関数作成
+        # ------------------------------
+        self._node.timer = self._node.create_timer(1.0, self.timer_callback)
+
 
         # GUIスレッドのスタート
         self.start_ui_thread()
@@ -62,6 +82,10 @@ class RqtRefereeBoxClient(Plugin):
         if self._context.serial_number() > 1:
             self._widget.setWindowTitle(
                 self._widget.windowTitle() + (' (%d)' % self._context.serial_number()))
+
+        # コンテキストに作成したウィジェットを追加
+        # これをしないとGUI画面が表示されない
+        self._context.add_widget(self._widget)
 
     def start_ui_thread(self):
         # QTimerのtimeoutシグナルが発行されるたびにQWidgetのupdateスロットが実行される
@@ -87,9 +111,22 @@ class RqtRefereeBoxClient(Plugin):
     def restore_settings(self, plugin_settings, instance_settings):
         pass
 
-    #
+    # ------------------------------
+    # ノードのタイマコールバック関数
+    # ------------------------------
+    def timer_callback(self,):
+        
+        # レフェリーボックスへログの送信を行う．周期的に送信する必要があるためタイマコールバックで実行することになる
+        # 全てのプレイヤーの情報はメンバ変数 self.player_states(PlayerStatesメッセージ型) に入っている
+        
+        
+        
+        return
+
+
+    # ------------------------------
     # 以下，スロット関数
-    #
+    # ------------------------------
     # 接続チェックボックスの状態が変化した時に呼び出されるスロット
     def onStateChangedChckConnect(self, state):
         if state:  # チェックが入った → 接続処理
@@ -150,3 +187,13 @@ class RqtRefereeBoxClient(Plugin):
         # refcmdメッセージをパブリッシュ．
         # player_serverのノードに伝達することが主目的
         self._pub_refcmd.publish(refereeCmd)
+
+    # ------------------------------
+    # 以下，サブスクライバーのコールバック関数
+    # ------------------------------
+    def player_states_callback(self, player_states):
+        self.player_states = player_states # メンバ変数に保存
+        
+        # ここではレフェリーボックスへログのjsonを送信しないほうがいい
+        # (理由)rqt_player_serverのplayer_statesパブリッシュの周期に依存して送信してしまうので
+        return
