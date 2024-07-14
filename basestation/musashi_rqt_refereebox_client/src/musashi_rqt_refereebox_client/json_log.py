@@ -4,6 +4,11 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 import json
 
+# ------------------------------
+# こいつにmusashi_msgsをimportするのは禁止！
+# このモジュール単体でテストできなくなるので
+# ------------------------------
+
 
 def make_header(start_time):
     header = {}
@@ -78,6 +83,32 @@ def make_player(id,
     return player
 
 
+def make_players(_players):
+    players = []
+
+    for _player in _players:
+        player = make_player(
+            _player[0],  # id
+            _player[1],  # x
+            _player[2],  # y
+            # _player[3],  # z （ない）
+            _player[4],  # qx
+            _player[5],  # qy
+            _player[6],  # qz
+            _player[7],  # qw
+            _player[8],  # moveto x
+            _player[9],  # moveto y
+            # _player[10],  # moveto z （ない）
+            _player[11],  # moveto qx
+            _player[12],  # moveto qy
+            _player[13],  # moveto qz
+            _player[14],  # moveto qw
+            _player[15],  # haveball
+        )
+        players.append(player)
+
+    return players  # 辞書型のリストを返す
+
 def make_ball(_px, _py, _qx, _qy, _qz, _qw,
               ball_dis, ball_angle):
     ball = {}
@@ -105,29 +136,51 @@ def make_ball(_px, _py, _qx, _qy, _qz, _qw,
 
     return ball
 
+def make_balls(_balls):
+    balls = []
+    
+    for _ball in _balls:
+        ball = make_ball(
+            _ball[0], # x
+            _ball[1], # y
+            # _ball[2], # z（ない）
+            _ball[3], # qx
+            _ball[4], # qy
+            _ball[5], # qz
+            _ball[6], # qw
+            _ball[7], # ball distance
+            _ball[8], # ball angle
+        )
+        balls.append(ball)
+        
+    return balls
+
 
 if __name__ == '__main__':
     print('Verification of json format')
 
-    data = make_header(datetime.now(timezone.utc))
-    data_players = [
-        make_player(1,
-                    1.0, 2.0,
-                    0.0, 0.0, 0.0, 1.0,
-                    1.5, 2.0,
-                    0.0, 0.0, 0.0, 1.0,
-                    1),
+    # テスト用のプレイヤーデータ作成（id,x,y,z,qx,qy,qz,qw,haveball）
+    players = [
+        [1,
+         2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+         2.0, 1.1, 0.0, 0.0, 0.0, 0.0, 1.0,
+         0],
+        [2,
+         2.5, 1.5, 0.0, 0.0, 0.0, 0.0, 1.0,
+         2.5, 2.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+         1]
     ]
-    data['robots'] = data_players
 
-    data_balls = [
-        make_ball(
-            1.0, 2.0,
-            0.0, 0.0, 0.0, 1.0,
-            2.5,
-            math.pi/2.0
-        )
+    # テスト用のボールデータ作成(x,y,z,qx,qy,qz,qw,ball_distance,ball_angle)
+    balls = [
+        [2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+         2.5, math.pi/2.0],
+        [2.5, 1.5, 0.0, 0.0, 0.0, 0.0, 1.0,
+         2.5, math.pi/3.0]
     ]
-    data['bals'] = data_balls
+
+    data = make_header(datetime.now(timezone.utc))
+    data['robots'] = make_players(players)
+    data['balls'] = make_balls(balls)
 
     print(json.dumps(data, indent=2))

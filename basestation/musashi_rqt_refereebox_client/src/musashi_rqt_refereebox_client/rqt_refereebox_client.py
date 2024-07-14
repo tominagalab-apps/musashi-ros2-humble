@@ -6,11 +6,9 @@ from python_qt_binding.QtWidgets import QWidget
 from python_qt_binding.QtCore import QTimer, Slot
 from python_qt_binding.QtWidgets import QErrorMessage
 
-# from refereebox_client.refereebox_client_widget import RefereeBoxClientWidget
 from musashi_rqt_refereebox_client.refbox_client import RefBoxClient
 
-from musashi_msgs.msg import RefereeCmd
-from musashi_msgs.msg import PlayerStates
+from musashi_msgs.msg import RefereeCmd, PlayerState, PlayerStates
 
 PKG_NAME = 'musashi_rqt_refereebox_client'
 UI_FILE_NAME = 'refereebox_client.ui'
@@ -28,7 +26,7 @@ class RqtRefereeBoxClient(Plugin):
         self._refbox_client = None
         self.is_connected_refbox = False
 
-        # ウィジェットインスタンスを作成，メンバ変数_widgetに.uiファイルが書き込まれる
+        # UIをロード，描画領域に追加
         self.create_ui()
 
         # ------------------------------
@@ -60,9 +58,7 @@ class RqtRefereeBoxClient(Plugin):
             5
         )
         
-        # ------------------------------
-        # タイマーコールバック関数作成
-        # ------------------------------
+        # タイマーコールバックのスタート
         self._node.timer = self._node.create_timer(1.0, self.timer_callback)
 
         # GUIスレッドのスタート
@@ -72,11 +68,14 @@ class RqtRefereeBoxClient(Plugin):
     def create_ui(self):
         # Qwidget型のメンバ変数作成
         self._widget = QWidget()
+        
         # パッケージ名からパッケージのディレクトリパスを取得
         _, package_path = get_resource('packages', PKG_NAME)
+        
         # .uiファイルへのパスを作成，取得
         ui_file = os.path.join(package_path, 'share',
                                PKG_NAME, 'resource', UI_FILE_NAME)
+        
         # .uiファイルをQWidget型メンバ変数にロード
         loadUi(ui_file, self._widget)
 
@@ -85,8 +84,7 @@ class RqtRefereeBoxClient(Plugin):
             self._widget.setWindowTitle(
                 self._widget.windowTitle() + (' (%d)' % self._context.serial_number()))
 
-        # コンテキストに作成したウィジェットを追加
-        # これをしないとGUI画面が表示されない
+        # コンテキストに作成したウィジェットを追加．これをしないとGUI画面が表示されない
         self._context.add_widget(self._widget)
 
     def start_ui_thread(self):

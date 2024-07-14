@@ -76,48 +76,48 @@ class RefBoxClient(QThread):
         # ------------------------------
 
         # ロボットの状態についてリストを作成する．
-        data_players = []
-        for i, player_state in enumerate(player_states.players):  # ロボット台数分の繰り返し
-            data_players.append(
-                json_log.make_player(
-                    player_state.id,
-                    player_state.position.position.x,
-                    player_state.position.position.y,
-                    player_state.position.position.z,
-                    player_state.position.orientation.x,
-                    player_state.position.orientation.y,
-                    player_state.position.orientation.z,
-                    player_state.position.orientation.w,
-                    player_state.moveto.position.x,
-                    player_state.moveto.position.y,
-                    player_state.moveto.position.z,
-                    player_state.moveto.orientation.x,
-                    player_state.moveto.orientation.y,
-                    player_state.moveto.orientation.z,
-                    player_state.moveto.orientation.w,
-                )
-            )  # リストに追加
+        _players = []
+        for player_state in player_states.players:
+            _player = [
+                player_state.id,
+                player_state.position.position.x,
+                player_state.position.position.y,
+                player_state.position.position.z,
+                player_state.position.orientation.x,
+                player_state.position.orientation.y,
+                player_state.position.orientation.z,
+                player_state.position.orientation.w,
+                player_state.moveto.position.x,
+                player_state.moveto.position.y,
+                player_state.moveto.position.z,
+                player_state.moveto.orientation.x,
+                player_state.moveto.orientation.y,
+                player_state.moveto.orientation.z,
+                player_state.moveto.orientation.w,
+                player_state.haveball,
+            ]
+            _players.append(_player)
 
         # data辞書にリストを追加．キー名は'robots'
-        data['robots'] = data_players
+        data['robots'] = json_log.make_players(_players)
 
         # ボールについてリストを作成する．
-        data_balls = []
-        for i, player_state in enumerate(player_states.players):  # ロボット台数分の繰り返し
-            data_balls.append(
-                json_log.make_ball(
-                    player_state.position.position.x,
-                    player_state.position.position.y,
-                    player_state.position.orientation.x,
-                    player_state.position.orientation.y,
-                    player_state.position.orientation.z,
-                    player_state.position.orientation.w,
-                    player_state.ball.distance,
-                    player_state.ball.angle
-                ))  # リストに追加
-
+        balls = []
+        for player_state in player_states.players:
+            _ball = [
+                player_state.position.position.x,
+                player_state.position.position.y,
+                player_state.position.position.z,
+                player_state.position.orientation.x,
+                player_state.position.orientation.y,
+                player_state.position.orientation.z,
+                player_state.position.orientation.w,
+                player_state.ball.distance,
+                player_state.ball.angle
+            ]
+            balls.append(_ball)
         # data辞書にリストを追加．キー名は'balls'
-        data['balls'] = data_balls
+        data['balls'] = json_log(balls)
 
         # 障害物についてリストを作成する．ただし大会規定のワールド座標系に合わせないといけないので座標変換が必要
         # チーム内xy軸の定義と大会ルールの定義は異なっている
