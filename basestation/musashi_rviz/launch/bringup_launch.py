@@ -19,6 +19,12 @@ def generate_launch_description():
         'launch',
         'team_spawn_launch.py'
     )
+    
+    field_parameter_path = os.path.join(
+        get_package_share_directory('musashi_rviz'),
+        'config',
+        'field_parameters.yaml'
+    )
 
     return LaunchDescription([
         # ノードの起動
@@ -27,6 +33,8 @@ def generate_launch_description():
         Node(
             package='musashi_rviz',
             executable='node_field_publisher',
+            name='field_publisher',
+            parameters=[field_parameter_path]
         ),
         # 2. rviz2を起動
         # config.rvizを参照してレイアウトを読み込む

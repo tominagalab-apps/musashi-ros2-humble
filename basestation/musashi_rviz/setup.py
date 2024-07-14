@@ -14,6 +14,7 @@ setup(
         ('share/' + package_name + '/launch',
          ['launch/player_spawn_launch.py']),
         ('share/' + package_name + '/launch', ['launch/team_spawn_launch.py']),
+        ('share/' + package_name + '/config', ['config/field_parameters.yaml']),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
