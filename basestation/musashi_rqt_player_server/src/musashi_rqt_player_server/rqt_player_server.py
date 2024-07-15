@@ -18,7 +18,9 @@ import tf2_ros
 PKG_NAME = 'musashi_rqt_player_server'
 UI_FILE_NAME = 'player_server.ui'
 
-PUBLISH_RATE = 0.16  # 33Hz
+RATE_PLAYER_STATES_PUBLISH = 0.1  # player_statsのパブリッシュ周期[s]
+RATE_TF_BROADCAST = 0.1  # 各プレイヤーのtfのブロードキャスト周期[s]
+RATE_SEND_TO_PLAYERS = 0.1  # 各playerへのコマンド送信周期[s]
 
 TEAM_IP = '224.16.32.44'
 
@@ -54,12 +56,13 @@ GOAL_C = 46
 DROP_BALL = 55
 CALIB_COMPASS = 66
 
+
 class RqtPlayerServer(Plugin):
     def __init__(self, context):
         super(RqtPlayerServer, self).__init__(context)
         self.setObjectName('RqtPlayerServer')
-        self._context = context # 親クラスからコンテキストをもらう
-        self._node = context.node # 親クラスからノードの実態をもらう
+        self._context = context  # 親クラスからコンテキストをもらう
+        self._node = context.node  # 親クラスからノードの実態をもらう
 
         # レフェリーからのコマンド（musashi_msgs.msgのRefereeCmd型）
         self._refcmd = RefereeCmd()
@@ -69,12 +72,11 @@ class RqtPlayerServer(Plugin):
 
         # チームカラー
         self._team_color = CYAN
-        
+
         # チームコマンドの初期化
         self.teamcmd = STOP
 
         # ウィジェットインスタンスを作成
-        # メンバ変数_widgetに.uiファイルが書き込まれる
         self.create_ui()
 
         # サブスクライバー作成
@@ -91,7 +93,6 @@ class RqtPlayerServer(Plugin):
             '/player_states',
             10
         )
-        
 
         # tfブロードキャスター作成
         self.br = tf2_ros.TransformBroadcaster(self._node)
@@ -103,16 +104,20 @@ class RqtPlayerServer(Plugin):
         self._player_server.open()  # プレイヤーサーバのオープン
         self._player_server.start()  # UDP通信の受信スレッド開始
 
-        # コンテキストに作成したウィジェットを追加
-        # これをしないとGUI画面が表示されない
-        self._context.add_widget(self._widget)
-
         # GUIスレッドのスタート
         self.start_ui_thread()
 
         # PlayerStatesをパブリッシュするタイマコールバックのスタート
-        self._node.timer = self._node.create_timer(
-            PUBLISH_RATE, self.player_states_publish_timer_callback)
+        self._node.timer_player_states_publish = self._node.create_timer(
+            RATE_PLAYER_STATES_PUBLISH, self.timer_callback_player_states_publish)
+
+        # tfをブロードキャストするタイマコールバックのスタート
+        self._node.timer_tf_broadcast = self._node.create_timer(
+            RATE_TF_BROADCAST, self.timer_callback_tf_broadcast)
+
+        # 各プレイヤーへコマンドを送信するタイマコールバックのスタート
+        self._node.timer_send_to_players = self._node.create_timer(
+            RATE_SEND_TO_PLAYERS, self.timer_callback_send_to_players)
 
     def create_ui(self):
         # Qwidget型のメンバ変数作成
@@ -129,6 +134,10 @@ class RqtPlayerServer(Plugin):
         if self._context.serial_number() > 1:
             self._widget.setWindowTitle(
                 self._widget.windowTitle() + (' (%d)' % self._context.serial_number()))
+
+        # コンテキストに作成したウィジェットを追加
+        # これをしないとGUI画面が表示されない
+        self._context.add_widget(self._widget)
 
     def start_ui_thread(self):
         # QTimerのtimeoutシグナルが発行されるたびにQWidgetのupdateスロットが実行される
@@ -154,8 +163,9 @@ class RqtPlayerServer(Plugin):
 
     # レフェリーボックスコマンドのサブスクライバ-コールバック関数
     def refcmd_callback(self, msg):
-        self._node.get_logger().info('command={}, targetTeam={}'.format(msg.command, msg.target_team))
-        
+        self._node.get_logger().info(
+            'command={}, targetTeam={}'.format(msg.command, msg.target_team))
+
         self._refcmd = msg  # メンバ変数に格納
 
         # hibikino-musashiチーム内のコマンドへ変換
@@ -319,20 +329,20 @@ class RqtPlayerServer(Plugin):
         return
 
     # PlayerStatesをパブリッシュするタイマコールバック関数
-    def player_states_publish_timer_callback(self,):
-        # palyer_statesをパブリッシュ
+    def timer_callback_player_states_publish(self,):
+        # player_statesメッセージをパブリッシュ
         self._pub_player_stats.publish(self._player_states)
+        return
 
+    def timer_callback_tf_broadcast(self,):
         # 各プレイヤーのtfをブロードキャスト
-        for i, player_state in enumerate(self._player_states.players):
+        for player_state in self._player_states.players:
             now = self._node.get_clock().now().to_msg()
             t = TransformStamped()
 
-            player_frame_id = 'player' + str(i+1) + '/base_link'
-
             t.header.stamp = now
-            t.header.frame_id = 'map'
-            t.child_frame_id = player_frame_id
+            t.header.frame_id = 'world'
+            t.child_frame_id = 'player' + str(player_state.id) + '/base_link'
 
             t.transform.translation.x = player_state.position.position.x
             t.transform.translation.y = player_state.position.position.y
@@ -343,23 +353,11 @@ class RqtPlayerServer(Plugin):
             t.transform.rotation.w = player_state.position.orientation.w
 
             self.br.sendTransform(t)
-
         return
-
-    # PlayerServerクラスからシグナルが発行された時に実行されるスロット
-    # プレイヤーからデータを受信した際のスロット関数
-    # id: 受信したプレイヤーのid
-    # player_state: プレイヤーのデータ
-    @Slot(int, PlayerState)
-    def onRecievedPlayerData(self, id, player_state):
-        self._node.get_logger().info('Player No:{}, states={}'.format(id, player_state))
-
-        player_state.header.stamp = self._node.get_clock().now().to_msg()
-        self._player_states.players[id - 1] = player_state  # 配列に代入
-
-        # 受信したらプレイヤーへの返信
+    
+    def timer_callback_send_to_players(self,):
+        
         # 返信内容はコマンド＋全プレイヤーのデータ
-
         send_data = struct.pack(
             'ii',
             5,  # aliveNum
@@ -487,7 +485,7 @@ class RqtPlayerServer(Plugin):
             roles[3],
             roles[4],
         )
-        
+
         # haveBallリスト作成，結合
         send_data = send_data + struct.pack(
             'iiiii',
@@ -497,8 +495,8 @@ class RqtPlayerServer(Plugin):
             self._player_states.players[3].haveball,
             self._player_states.players[4].haveball
         )
-        
-         # moveto.xリスト作成，結合Ï
+
+        # moveto.xリスト作成，結合Ï
         send_data = send_data + struct.pack(
             'ddddd',
             self._player_states.players[0].moveto.position.x,
@@ -507,7 +505,7 @@ class RqtPlayerServer(Plugin):
             self._player_states.players[3].moveto.position.x,
             self._player_states.players[4].moveto.position.x,
         )
-        
+
         # moveto.yリスト作成，結合Ï
         send_data = send_data + struct.pack(
             'ddddd',
@@ -517,7 +515,7 @@ class RqtPlayerServer(Plugin):
             self._player_states.players[3].moveto.position.y,
             self._player_states.players[4].moveto.position.y,
         )
-        
+
         # moveto.angleリスト作成，結合
         # クォータニオンからRPYに変換する必要がある
         send_data = send_data + struct.pack(
@@ -528,7 +526,7 @@ class RqtPlayerServer(Plugin):
             0.0,
             0.0
         )
-        
+
         # oblstacle.distanceリスト作成，結合Ï
         send_data = send_data + struct.pack(
             'ddddd',
@@ -548,7 +546,7 @@ class RqtPlayerServer(Plugin):
             self._player_states.players[3].obstacle.angle,
             self._player_states.players[4].obstacle.angle,
         )
-        
+
         # state_vectorリスト作成，結合
         # 多分position（自己位置）のデータだったはず
         # position.xリスト作成，結合Ï
@@ -579,23 +577,32 @@ class RqtPlayerServer(Plugin):
             0.0,
             0.0
         )
-
+        
         # 送信処理
-        self._player_server.send(send_data)
+        self._player_server.broadcast(send_data)
+        
+        return
+
+    # PlayerServerクラスからシグナルが発行された時に実行されるスロット
+    # プレイヤーからデータを受信した際のスロット関数
+    # id: 受信したプレイヤーのid
+    # player_state: プレイヤーのデータ
+    @Slot(int, PlayerState)
+    def onRecievedPlayerData(self, id, player_state):
+        self._node.get_logger().info('Player No:{}, states={}'.format(id, player_state))
+
+        player_state.header.stamp = self._node.get_clock().now().to_msg()
+        self._player_states.players[id - 1] = player_state  # 配列に代入
 
         return
 
     def roles_dicision(self,):
         roles = [0, 0, 0, 0, 0]
-        
-        
-        #-----
+
+        # -----
         # ここから頑張って各プレイヤーのロールを決定する処理
-        #-----
+        # -----
         
-        
-        
-        
+
         # ロール決定処理ここまで
-        return roles # 結果
-        
+        return roles  # 結果
