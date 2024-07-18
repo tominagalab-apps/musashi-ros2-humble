@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>854</width>
+    <width>856</width>
     <height>168</height>
    </rect>
   </property>
@@ -30,63 +30,101 @@
     <number>3</number>
    </property>
    <item>
-    <widget class="QGroupBox" name="grpColor">
-     <property name="title">
-      <string>Own team color</string>
-     </property>
-     <layout class="QVBoxLayout" name="verticalLayout_4">
-      <property name="spacing">
-       <number>3</number>
-      </property>
-      <property name="leftMargin">
-       <number>10</number>
-      </property>
-      <property name="topMargin">
-       <number>3</number>
-      </property>
-      <property name="rightMargin">
-       <number>0</number>
-      </property>
-      <property name="bottomMargin">
-       <number>3</number>
-      </property>
-      <item>
-       <widget class="QRadioButton" name="rbtnCyan">
-        <property name="maximumSize">
-         <size>
-          <width>100</width>
-          <height>16777215</height>
-         </size>
+    <layout class="QVBoxLayout" name="verticalLayout_2">
+     <item>
+      <widget class="QGroupBox" name="grpColor">
+       <property name="title">
+        <string>Own team color</string>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_4">
+        <property name="spacing">
+         <number>3</number>
         </property>
-        <property name="styleSheet">
-         <string notr="true">color: rgb(53, 132, 228);</string>
+        <property name="leftMargin">
+         <number>10</number>
         </property>
-        <property name="text">
-         <string>CYAN</string>
+        <property name="topMargin">
+         <number>3</number>
         </property>
-        <property name="checked">
-         <bool>true</bool>
+        <property name="rightMargin">
+         <number>0</number>
         </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QRadioButton" name="rbtnMagenta">
-        <property name="maximumSize">
-         <size>
-          <width>100</width>
-          <height>16777215</height>
-         </size>
+        <property name="bottomMargin">
+         <number>3</number>
         </property>
-        <property name="styleSheet">
-         <string notr="true">color: rgb(192, 97, 203);</string>
+        <item>
+         <widget class="QRadioButton" name="rbtnCyan">
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">color: rgb(53, 132, 228);</string>
+          </property>
+          <property name="text">
+           <string>CYAN</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="rbtnMagenta">
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">color: rgb(192, 97, 203);</string>
+          </property>
+          <property name="text">
+           <string>MAGENTA</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <widget class="QGroupBox" name="groupBox_2">
+       <property name="title">
+        <string>TeamCmd</string>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_5">
+        <property name="spacing">
+         <number>3</number>
         </property>
-        <property name="text">
-         <string>MAGENTA</string>
+        <property name="leftMargin">
+         <number>3</number>
         </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
+        <property name="topMargin">
+         <number>3</number>
+        </property>
+        <property name="rightMargin">
+         <number>3</number>
+        </property>
+        <property name="bottomMargin">
+         <number>3</number>
+        </property>
+        <item>
+         <widget class="QLabel" name="lblTeamCmd">
+          <property name="text">
+           <string>...</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
    </item>
    <item>
     <widget class="Line" name="line_2">

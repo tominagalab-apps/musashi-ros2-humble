@@ -4,17 +4,20 @@ import socket
 import math
 from musashi_msgs.msg import PlayerState
 
-OWN_IP = '127.0.0.1'  # basestation自身のIPアドレス
-# OWN_IP = '172.16.44.10'
+
+# basestation自身のIPアドレスを設定してください
+# 例：OWN_IP='172.16.44.10'
+OWN_IP = '127.0.0.1' # 要編集
 
 PORT = 12536  # ポート
 
-# 各プレイヤーのIPアドレス
-PLAYER1_IP = '172.16.44.1'
-PLAYER2_IP = '172.16.44.2'
-PLAYER3_IP = '172.16.44.3'
-PLAYER4_IP = '172.16.44.4'
-PLAYER5_IP = '172.16.44.5'
+# 各プレイヤーのIPアドレスを設定してください
+PLAYER1_IP = '172.16.44.1' # 要編集
+PLAYER2_IP = '172.16.44.2' # 要編集
+PLAYER3_IP = '172.16.44.3' # 要編集
+PLAYER4_IP = '172.16.44.4' # 要編集
+PLAYER5_IP = '172.16.44.5' # 要編集
+
 
 MAX_RECV_SIZE = 1024*4
 
@@ -42,6 +45,13 @@ class PlayerServer(QThread):
         pass
 
     def open(self,):
+        # 自身のIPアドレスを取得する
+        own_ip = socket.gethostbyname(socket.gethostname())
+        
+        # 設定が異なっていればWarningのためのExceptionをスロー
+        if not own_ip == str(OWN_IP):
+            raise Exception('Doese not match OWN_IP value')
+        
         # バインド（紐付け）
         self._socket.bind((OWN_IP, PORT))
 
@@ -54,7 +64,8 @@ class PlayerServer(QThread):
 
         while self._isRun:
             # 受信処理（ブロッキングモード）
-            print('wait player ...')
+            # print('wait player ...')
+
             recv, addr = self._socket.recvfrom(MAX_RECV_SIZE)
             # recvには受信したデータ（文字列）
             # addrには送信元のアドレス（文字列）が入っている
@@ -112,18 +123,21 @@ class PlayerServer(QThread):
             # シグナル発行
             self.recievedPlayerData.emit(player_state.id, player_state)
 
+    def send_to_player(self, binary_data, player_addr):
+        try:
+            self._socket.sendto(binary_data, player_addr)
+        except Exception as e:
+            raise Exception('{} in sending to {}'.format(e.args[0], player_addr[0]))
+
     def broadcast(self, binary_data):
         try:
-            self._socket.sendto(binary_data, (PLAYER1_IP, PORT))
-            self._socket.sendto(binary_data, (PLAYER2_IP, PORT))
-            self._socket.sendto(binary_data, (PLAYER3_IP, PORT))
-            self._socket.sendto(binary_data, (PLAYER4_IP, PORT))
-            self._socket.sendto(binary_data, (PLAYER5_IP, PORT))
+            self._socket.send_to_player(binary_data, (PLAYER1_IP, PORT))
+            self._socket.send_to_player(binary_data, (PLAYER2_IP, PORT))
+            self._socket.send_to_player(binary_data, (PLAYER3_IP, PORT))
+            self._socket.send_to_player(binary_data, (PLAYER4_IP, PORT))
+            self._socket.send_to_player(binary_data, (PLAYER5_IP, PORT))
         except Exception as e: 
-            # ローカルループバックテスト(OWN_IP=127.0.0.1)の時は例外が出るので対処している
-            return
-        
-        return
+            raise Exception(e.args[1])
 
     def euler_to_quaternion(self, roll, pitch, yaw):
         qx = math.sin(roll/2) * math.cos(pitch/2) * math.cos(yaw/2) - \

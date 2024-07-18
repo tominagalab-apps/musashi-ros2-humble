@@ -56,7 +56,6 @@ GOAL_C = 46
 DROP_BALL = 55
 CALIB_COMPASS = 66
 
-
 class RqtPlayerServer(Plugin):
     def __init__(self, context):
         super(RqtPlayerServer, self).__init__(context)
@@ -101,7 +100,12 @@ class RqtPlayerServer(Plugin):
         self._player_server = PlayerServer()  # PlayerServerインスタンス作成
         self._player_server.recievedPlayerData.connect(
             self.onRecievedPlayerData)  # シグナルスロット接続
-        self._player_server.open()  # プレイヤーサーバのオープン
+        try:
+            self._player_server.open()  # プレイヤーサーバのオープン
+        except Exception as e:
+            self._node.get_logger().warning('{}'.format(e))
+            self._node.get_logger().warning('Please confirm OWN_IP value in player_server.py')
+            
         self._player_server.start()  # UDP通信の受信スレッド開始
 
         # GUIスレッドのスタート
@@ -325,7 +329,11 @@ class RqtPlayerServer(Plugin):
                     pass
                 else:
                     pass
-
+        else:
+            pass
+        
+        #UI上に表示
+        self._widget.lblTeamCmd.setText(self.teamcmd)
         return
 
     # PlayerStatesをパブリッシュするタイマコールバック関数
@@ -579,8 +587,12 @@ class RqtPlayerServer(Plugin):
         )
         
         # 送信処理
-        self._player_server.broadcast(send_data)
-        
+        # print(len(send_data))
+        try:
+            self._player_server.broadcast(send_data)
+        except Exception as e:
+            self._node.get_logger().error('{}: Please confirm Player IP address in player_server.py'.format(e))
+            
         return
 
     # PlayerServerクラスからシグナルが発行された時に実行されるスロット
@@ -589,7 +601,7 @@ class RqtPlayerServer(Plugin):
     # player_state: プレイヤーのデータ
     @Slot(int, PlayerState)
     def onRecievedPlayerData(self, id, player_state):
-        self._node.get_logger().info('Player No:{}, states={}'.format(id, player_state))
+        self._node.get_logger().debug('Player No:{}, states={}'.format(id, player_state))
 
         player_state.header.stamp = self._node.get_clock().now().to_msg()
         self._player_states.players[id - 1] = player_state  # 配列に代入

@@ -89,8 +89,17 @@ class RqtPlayerController(Plugin):
   def player_states_callback(self, player_states):
     for i, player_state in enumerate(player_states.players):
       
-      timestamp = str(player_state.header.stamp.sec) + '.' + '{:.3g}'.format(player_state.header.stamp.nanosec)
+      timestamp = str(player_state.header.stamp.sec) + '.' + '{:.1g}'.format(player_state.header.stamp.nanosec)
+      id = player_state.id
+      color = player_state.color
+      action = player_state.action
+      state = player_state.state
       
       self._pwidgets[i].lblTimeStamp.setText(timestamp) # timestampラベルに書き込み
+      self._pwidgets[i].lblID.setText(str(id))
+      self._pwidgets[i].lblAction.setText(str(action))
+      # self._pwidgets[i].txtState.append('color:{}'.format(color))
+      # self._pwidgets[i].txtState.append('action:{}'.format(action))
+      # self._pwidgets[i].txtState.append('state:{}'.format(state))
       
     return
