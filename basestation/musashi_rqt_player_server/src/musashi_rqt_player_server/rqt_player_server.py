@@ -25,7 +25,7 @@ RATE_SEND_TO_PLAYERS = 0.1  # 各playerへのコマンド送信周期[s]
 MAGENTA = 0
 CYAN = 1
 
-TEAM_COLOR = CYAN # チームのカラーを設定する
+TEAM_COLOR = CYAN  # チームのカラーを設定する
 
 ALPHA = 1
 BETA = 2
@@ -33,7 +33,7 @@ GAMMA = 3
 DELTA = 4
 GOALIE = 5
 
-ROLE_ASSIGN_METHOD = 0 # 0:static, 1:by distance between ball
+ROLE_ASSIGN_METHOD = 0  # 0:static, 1:by distance between ball
 
 TEAM_IP = '224.16.32.44'
 
@@ -59,6 +59,7 @@ GOAL_M = 36
 GOAL_C = 46
 DROP_BALL = 55
 CALIB_COMPASS = 66
+
 
 class RqtPlayerServer(Plugin):
     def __init__(self, context):
@@ -98,7 +99,13 @@ class RqtPlayerServer(Plugin):
         )
 
         # tfブロードキャスター作成
-        self.br = tf2_ros.TransformBroadcaster(self._node)
+        self.brs = [
+            tf2_ros.TransformBroadcaster(self._node),
+            tf2_ros.TransformBroadcaster(self._node),
+            tf2_ros.TransformBroadcaster(self._node),
+            tf2_ros.TransformBroadcaster(self._node),
+            tf2_ros.TransformBroadcaster(self._node),
+        ]
 
         # PlayerServer作成，シグナルスロット接続，起動
         self._player_server = PlayerServer()  # PlayerServerインスタンス作成
@@ -109,7 +116,7 @@ class RqtPlayerServer(Plugin):
         except Exception as e:
             self._node.get_logger().warning('{}'.format(e))
             self._node.get_logger().warning('Please confirm OWN_IP value in player_server.py')
-            
+
         self._player_server.start()  # UDP通信の受信スレッド開始
 
         # GUIスレッドのスタート
@@ -335,8 +342,8 @@ class RqtPlayerServer(Plugin):
                     pass
         else:
             pass
-        
-        #UI上に表示
+
+        # UI上に表示
         self._widget.lblTeamCmd.setText(str(self.teamcmd))
         return
 
@@ -347,28 +354,54 @@ class RqtPlayerServer(Plugin):
         return
 
     def timer_callback_tf_broadcast(self,):
+
         # 各プレイヤーのtfをブロードキャスト
-        for player_state in self._player_states.players:
-            now = self._node.get_clock().now().to_msg()
-            t = TransformStamped()
+        now = self._node.get_clock().now().to_msg()
 
-            t.header.stamp = now
-            t.header.frame_id = 'world'
-            t.child_frame_id = 'player' + str(player_state.id) + '/base_link'
-
-            t.transform.translation.x = player_state.position.position.x
-            t.transform.translation.y = player_state.position.position.y
-            t.transform.translation.z = player_state.position.position.z
-            t.transform.rotation.x = player_state.position.orientation.x
-            t.transform.rotation.y = player_state.position.orientation.y
-            t.transform.rotation.z = player_state.position.orientation.z
-            t.transform.rotation.w = player_state.position.orientation.w
-
-            self.br.sendTransform(t)
-        return
-    
-    def timer_callback_send_to_players(self,):
+        trs = [
+            TransformStamped(),
+            TransformStamped(),
+            TransformStamped(),
+            TransformStamped(),
+            TransformStamped(),
+        ]
         
+        for i,player in enumerate(self._player_states.players):
+            trs[i].header.stamp = now
+            trs[i].header.frame_id = 'world'
+            trs[i].child_frame_id = 'player'+ str(i + 1) + '/base_link'
+            trs[i].transform.translation.x = self._player_states.players[i].position.position.x
+            trs[i].transform.translation.y = self._player_states.players[i].position.position.y
+            trs[i].transform.translation.z = self._player_states.players[i].position.position.z
+            trs[i].transform.rotation.x = self._player_states.players[i].position.orientation.x
+            trs[i].transform.rotation.y = self._player_states.players[i].position.orientation.y
+            trs[i].transform.rotation.z = self._player_states.players[i].position.orientation.z
+            trs[i].transform.rotation.w = self._player_states.players[i].position.orientation.w
+            self.brs[i].sendTransform(trs[i])
+        
+
+        # for player_state in self._player_states.players:
+        #     now = self._node.get_clock().now().to_msg()
+        #     t = TransformStamped()
+
+        #     t.header.stamp = now
+        #     t.header.frame_id = 'world'
+        #     t.child_frame_id = 'player' + str(player_state.id) + '/base_link'
+
+        #     t.transform.translation.x = player_state.position.position.x
+        #     t.transform.translation.y = player_state.position.position.y
+        #     t.transform.translation.z = player_state.position.position.z
+        #     t.transform.rotation.x = player_state.position.orientation.x
+        #     t.transform.rotation.y = player_state.position.orientation.y
+        #     t.transform.rotation.z = player_state.position.orientation.z
+        #     t.transform.rotation.w = player_state.position.orientation.w
+
+        #     # self.br.sendTransform(t)
+        #     self.brs[player_state.id - 1].sendTransform(t)
+        return
+
+    def timer_callback_send_to_players(self,):
+
         # 返信内容はコマンド＋全プレイヤーのデータ
         send_data = struct.pack(
             'ii',
@@ -589,14 +622,15 @@ class RqtPlayerServer(Plugin):
             0.0,
             0.0
         )
-        
+
         # 送信処理
         # print(len(send_data))
         try:
             self._player_server.broadcast(send_data)
         except Exception as e:
-            self._node.get_logger().error('{}: Please confirm Player IP address in player_server.py'.format(e))
-            
+            self._node.get_logger().error(
+                '{}: Please confirm Player IP address in player_server.py'.format(e))
+
         return
 
     # PlayerServerクラスからシグナルが発行された時に実行されるスロット
@@ -621,18 +655,18 @@ class RqtPlayerServer(Plugin):
         # -----
         # （案１）ボールとの距離の近さ順にAlpha, Beta,...
         if ROLE_ASSIGN_METHOD == 1:
-            
+
             # 各プレイヤーのIDとball.distanceをタプルにしてリスト化
             ball_distances = []
             for player in self._player_states.players:
                 tmp = (player.id, player.ball.distance)
-                if player.id != GOALIE: # ゴーリーは除外する
+                if player.id != GOALIE:  # ゴーリーは除外する
                     ball_distances.append(tmp)
-                
+
             # 昇順（近い順に）ソート
             ball_distances.sort(key=lambda x: x[1])
-            
-             # rolesを並び替え
+
+            # rolesを並び替え
             roles[ball_distances[0]] = ALPHA
             roles[ball_distances[1]] = BETA
             roles[ball_distances[2]] = GAMMA

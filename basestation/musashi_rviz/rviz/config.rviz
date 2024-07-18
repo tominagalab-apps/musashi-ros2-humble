@@ -5,6 +5,8 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
+        - /Player21
+        - /Player21/Status1
       Splitter Ratio: 0.5
     Tree Height: 692
   - Class: rviz_common/Selection
@@ -286,7 +288,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 28.239395141601562
+      Distance: 4.450568675994873
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -301,10 +303,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.9097966551780701
+      Pitch: 0.49479663372039795
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.148584365844727
+      Yaw: 4.0335845947265625
     Saved: ~
 Window Geometry:
   Displays:
