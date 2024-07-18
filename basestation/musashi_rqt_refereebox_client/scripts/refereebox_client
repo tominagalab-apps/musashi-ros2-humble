@@ -5,4 +5,4 @@ import sys
 from rqt_gui.main import Main
 
 main = Main()
-sys.exit(main.main(sys.argv, standalone='musashi_rqt_refereebox_client.rmusashi_rqt_refereebox_client.RqtRefereeBoxClient'))
+sys.exit(main.main(sys.argv, standalone='musashi_rqt_refereebox_client.rqt_refereebox_client.RqtRefereeBoxClient'))
