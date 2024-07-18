@@ -111,19 +111,19 @@ class RqtPlayerController(Plugin):
       self._pwidgets[i].lblState.setText(str(state))
 
       if color == MAGENTA:        
-        self._pwidgets[-1].ledtDispColorAndRole.setStyleSheet('background-color: magenta')
+        self._pwidgets[i].ledtDispColorAndRole.setStyleSheet('background-color: magenta')
       elif color == CYAN:
-        self._pwidgets[-1].ledtDispColorAndRole.setStyleSheet('background-color: cyan')
+        self._pwidgets[i].ledtDispColorAndRole.setStyleSheet('background-color: cyan')
         
       if role == ALPHA:
-        self._pwidgets[i].editRole.setText('Alpha')
+        self._pwidgets[i].ledtDispColorAndRole.setText('Alpha')
       if role == BETA:
-        self._pwidgets[i].editRole.setText('Beta')
+        self._pwidgets[i].ledtDispColorAndRole.setText('Beta')
       if role == GAMMA:
-        self._pwidgets[i].editRole.setText('Gamma')
+        self._pwidgets[i].ledtDispColorAndRole.setText('Gamma')
       if role == DELTA:
-        self._pwidgets[i].editRole.setText('Delta')
+        self._pwidgets[i].ledtDispColorAndRole.setText('Delta')
       if role == GOALIE:
-        self._pwidgets[i].editRole.setText('Goalie')
+        self._pwidgets[i].ledtDispColorAndRole.setText('Goalie')
       
     return
