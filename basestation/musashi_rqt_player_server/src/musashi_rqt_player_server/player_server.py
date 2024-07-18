@@ -18,7 +18,6 @@ PLAYER3_IP = '172.16.44.3' # 要編集
 PLAYER4_IP = '172.16.44.4' # 要編集
 PLAYER5_IP = '172.16.44.5' # 要編集
 
-
 MAX_RECV_SIZE = 1024*4
 
 class PlayerServer(QThread):
@@ -48,9 +47,11 @@ class PlayerServer(QThread):
         # 自身のIPアドレスを取得する
         own_ip = socket.gethostbyname(socket.gethostname())
         
+        
+        
         # 設定が異なっていればWarningのためのExceptionをスロー
-        if not own_ip == str(OWN_IP):
-            raise Exception('Doese not match OWN_IP value')
+        # if not own_ip == str(OWN_IP):
+        #     raise Exception('Doese not match OWN_IP value {}'.format(own_ip)) # うまく条件分岐しない
         
         # バインド（紐付け）
         self._socket.bind((OWN_IP, PORT))
@@ -128,16 +129,17 @@ class PlayerServer(QThread):
             self._socket.sendto(binary_data, player_addr)
         except Exception as e:
             raise Exception('{} in sending to {}'.format(e.args[0], player_addr[0]))
+            
 
     def broadcast(self, binary_data):
         try:
-            self._socket.send_to_player(binary_data, (PLAYER1_IP, PORT))
-            self._socket.send_to_player(binary_data, (PLAYER2_IP, PORT))
-            self._socket.send_to_player(binary_data, (PLAYER3_IP, PORT))
-            self._socket.send_to_player(binary_data, (PLAYER4_IP, PORT))
-            self._socket.send_to_player(binary_data, (PLAYER5_IP, PORT))
+            self.send_to_player(binary_data, (PLAYER1_IP, PORT))
+            self.send_to_player(binary_data, (PLAYER2_IP, PORT))
+            self.send_to_player(binary_data, (PLAYER3_IP, PORT))
+            self.send_to_player(binary_data, (PLAYER4_IP, PORT))
+            self.send_to_player(binary_data, (PLAYER5_IP, PORT))
         except Exception as e: 
-            raise Exception(e.args[1])
+            raise Exception(e.args[0])
 
     def euler_to_quaternion(self, roll, pitch, yaw):
         qx = math.sin(roll/2) * math.cos(pitch/2) * math.cos(yaw/2) - \

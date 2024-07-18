@@ -22,16 +22,20 @@ RATE_PLAYER_STATES_PUBLISH = 0.1  # player_statsのパブリッシュ周期[s]
 RATE_TF_BROADCAST = 0.1  # 各プレイヤーのtfのブロードキャスト周期[s]
 RATE_SEND_TO_PLAYERS = 0.1  # 各playerへのコマンド送信周期[s]
 
-TEAM_IP = '224.16.32.44'
-
 MAGENTA = 0
 CYAN = 1
+
+TEAM_COLOR = CYAN # チームのカラーを設定する
 
 ALPHA = 1
 BETA = 2
 GAMMA = 3
 DELTA = 4
 GOALIE = 5
+
+ROLE_ASSIGN_METHOD = 0 # 0:static, 1:by distance between ball
+
+TEAM_IP = '224.16.32.44'
 
 # hibikino-musashiのチーム内コマンド
 WELCOME = 00
@@ -70,7 +74,7 @@ class RqtPlayerServer(Plugin):
         self._player_states = PlayerStates()
 
         # チームカラー
-        self._team_color = CYAN
+        self._team_color = TEAM_COLOR
 
         # チームコマンドの初期化
         self.teamcmd = STOP
@@ -333,7 +337,7 @@ class RqtPlayerServer(Plugin):
             pass
         
         #UI上に表示
-        self._widget.lblTeamCmd.setText(self.teamcmd)
+        self._widget.lblTeamCmd.setText(str(self.teamcmd))
         return
 
     # PlayerStatesをパブリッシュするタイマコールバック関数
@@ -609,12 +613,30 @@ class RqtPlayerServer(Plugin):
         return
 
     def roles_dicision(self,):
-        roles = [0, 0, 0, 0, 0]
+        # 静的ロール割り振り
+        roles = [ALPHA, BETA, GAMMA, DELTA, GOALIE]
 
         # -----
         # ここから頑張って各プレイヤーのロールを決定する処理
         # -----
-        
+        # （案１）ボールとの距離の近さ順にAlpha, Beta,...
+        if ROLE_ASSIGN_METHOD == 1:
+            
+            # 各プレイヤーのIDとball.distanceをタプルにしてリスト化
+            ball_distances = []
+            for player in self._player_states.players:
+                tmp = (player.id, player.ball.distance)
+                if player.id != GOALIE: # ゴーリーは除外する
+                    ball_distances.append(tmp)
+                
+            # 昇順（近い順に）ソート
+            ball_distances.sort(key=lambda x: x[1])
+            
+             # rolesを並び替え
+            roles[ball_distances[0]] = ALPHA
+            roles[ball_distances[1]] = BETA
+            roles[ball_distances[2]] = GAMMA
+            roles[ball_distances[3]] = DELTA
 
         # ロール決定処理ここまで
         return roles  # 結果

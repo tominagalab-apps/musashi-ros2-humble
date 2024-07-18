@@ -12,6 +12,15 @@ UI_FILE_NAME = 'player_controller.ui'
 
 PLAYER_NUM = 5
 
+MAGENTA = 0
+CYAN = 1
+
+ALPHA = 1
+BETA = 2
+GAMMA = 3
+DELTA = 4
+GOALIE = 5
+
 class RqtPlayerController(Plugin):
   def __init__(self, context):
     super(RqtPlayerController, self).__init__(context)
@@ -55,7 +64,7 @@ class RqtPlayerController(Plugin):
     for i in range(PLAYER_NUM):
       self._pwidgets.append(QWidget())
       loadUi(ui_file, self._pwidgets[-1]) # 末尾のQWidgetインスタンスにuiファイルをロード
-      # self._pwidgets[-1].frmTeamColorDisp.setStyleSheet('background-color: magenta')
+
       self._layout.addWidget(self._pwidgets[-1])
       
     self._widget.setLayout(self._layout)
@@ -94,12 +103,27 @@ class RqtPlayerController(Plugin):
       color = player_state.color
       action = player_state.action
       state = player_state.state
+      role = player_state.role
       
       self._pwidgets[i].lblTimeStamp.setText(timestamp) # timestampラベルに書き込み
       self._pwidgets[i].lblID.setText(str(id))
       self._pwidgets[i].lblAction.setText(str(action))
-      # self._pwidgets[i].txtState.append('color:{}'.format(color))
-      # self._pwidgets[i].txtState.append('action:{}'.format(action))
-      # self._pwidgets[i].txtState.append('state:{}'.format(state))
+      self._pwidgets[i].lblState.setText(str(state))
+
+      if color == MAGENTA:        
+        self._pwidgets[-1].ledtDispColorAndRole.setStyleSheet('background-color: magenta')
+      elif color == CYAN:
+        self._pwidgets[-1].ledtDispColorAndRole.setStyleSheet('background-color: cyan')
+        
+      if role == ALPHA:
+        self._pwidgets[i].editRole.setText('Alpha')
+      if role == BETA:
+        self._pwidgets[i].editRole.setText('Beta')
+      if role == GAMMA:
+        self._pwidgets[i].editRole.setText('Gamma')
+      if role == DELTA:
+        self._pwidgets[i].editRole.setText('Delta')
+      if role == GOALIE:
+        self._pwidgets[i].editRole.setText('Goalie')
       
     return
