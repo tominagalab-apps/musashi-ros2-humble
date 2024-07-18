@@ -7,18 +7,19 @@ from musashi_msgs.msg import PlayerState
 
 # basestation自身のIPアドレスを設定してください
 # 例：OWN_IP='172.16.44.10'
-OWN_IP = '127.0.0.1' # 要編集
+OWN_IP = '127.0.0.1'  # 要編集
 
 PORT = 12536  # ポート
 
 # 各プレイヤーのIPアドレスを設定してください
-PLAYER1_IP = '172.16.44.1' # 要編集
-PLAYER2_IP = '172.16.44.2' # 要編集
-PLAYER3_IP = '172.16.44.3' # 要編集
-PLAYER4_IP = '172.16.44.4' # 要編集
-PLAYER5_IP = '172.16.44.5' # 要編集
+PLAYER1_IP = '172.16.44.1'  # 要編集
+PLAYER2_IP = '172.16.44.2'  # 要編集
+PLAYER3_IP = '172.16.44.3'  # 要編集
+PLAYER4_IP = '172.16.44.4'  # 要編集
+PLAYER5_IP = '172.16.44.5'  # 要編集
 
 MAX_RECV_SIZE = 1024*4
+
 
 class PlayerServer(QThread):
 
@@ -46,13 +47,11 @@ class PlayerServer(QThread):
     def open(self,):
         # 自身のIPアドレスを取得する
         own_ip = socket.gethostbyname(socket.gethostname())
-        
-        
-        
+
         # 設定が異なっていればWarningのためのExceptionをスロー
         # if not own_ip == str(OWN_IP):
         #     raise Exception('Doese not match OWN_IP value {}'.format(own_ip)) # うまく条件分岐しない
-        
+
         # バインド（紐付け）
         self._socket.bind((OWN_IP, PORT))
 
@@ -127,9 +126,9 @@ class PlayerServer(QThread):
     def send_to_player(self, binary_data, player_addr):
         try:
             self._socket.sendto(binary_data, player_addr)
-        except Exception as e:
-            raise Exception('{} in sending to {}'.format(e.args[0], player_addr[0]))
-            
+        except socket.error as e:
+            raise Exception('socket error [{}] in sending to {}'.format(
+                e.args[1], player_addr[0]))
 
     def broadcast(self, binary_data):
         try:
@@ -138,7 +137,7 @@ class PlayerServer(QThread):
             self.send_to_player(binary_data, (PLAYER3_IP, PORT))
             self.send_to_player(binary_data, (PLAYER4_IP, PORT))
             self.send_to_player(binary_data, (PLAYER5_IP, PORT))
-        except Exception as e: 
+        except Exception as e:
             raise Exception(e.args[0])
 
     def euler_to_quaternion(self, roll, pitch, yaw):
