@@ -99,6 +99,7 @@ class RqtPlayerController(Plugin):
     for i, player_state in enumerate(player_states.players):
       
       timestamp = str(player_state.header.stamp.sec) + '.' + '{:.1g}'.format(player_state.header.stamp.nanosec)
+      
       id = player_state.id
       color = player_state.color
       action = player_state.action

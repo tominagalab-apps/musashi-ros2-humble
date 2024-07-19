@@ -266,14 +266,14 @@ class RqtPlayerServer(Plugin):
         elif self._refcmd.command == 'FREEKICK':
             if self._refcmd.target_team == TEAM_IP:
                 if self._team_color == MAGENTA:
-                    self.teamcmd = GOAL_M
+                    self.teamcmd = FREE_KICK_M
                 else:
-                    self.teamcmd = GOAL_C
+                    self.teamcmd = FREE_KICK_C
             else:  # 相手のキックオフなら
                 if self._team_color == MAGENTA:
-                    self.teamcmd = GOAL_C
+                    self.teamcmd = FREE_KICK_C
                 else:
-                    self.teamcmd = GOAL_M
+                    self.teamcmd = FREE_KICK_M
         elif self._refcmd.command == 'GOAL':
             if self._refcmd.target_team == TEAM_IP:
                 if self._team_color == MAGENTA:
