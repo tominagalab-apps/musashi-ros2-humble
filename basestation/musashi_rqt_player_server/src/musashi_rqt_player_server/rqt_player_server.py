@@ -263,6 +263,17 @@ class RqtPlayerServer(Plugin):
                     self.teamcmd = PENALTY_C
                 else:
                     self.teamcmd = PENALTY_M
+        elif self._refcmd.command == 'FREEKICK':
+            if self._refcmd.target_team == TEAM_IP:
+                if self._team_color == MAGENTA:
+                    self.teamcmd = GOAL_M
+                else:
+                    self.teamcmd = GOAL_C
+            else:  # 相手のキックオフなら
+                if self._team_color == MAGENTA:
+                    self.teamcmd = GOAL_C
+                else:
+                    self.teamcmd = GOAL_M
         elif self._refcmd.command == 'GOAL':
             if self._refcmd.target_team == TEAM_IP:
                 if self._team_color == MAGENTA:
