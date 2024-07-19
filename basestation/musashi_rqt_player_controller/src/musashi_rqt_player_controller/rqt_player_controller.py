@@ -111,9 +111,9 @@ class RqtPlayerController(Plugin):
       self._pwidgets[i].lblState.setText(str(state))
 
       if color == MAGENTA:        
-        self._pwidgets[-1].ledtDispColorAndRole.setStyleSheet('background-color: magenta')
+        self._pwidgets[i].ledtDispColorAndRole.setStyleSheet('background-color: magenta')
       elif color == CYAN:
-        self._pwidgets[-1].ledtDispColorAndRole.setStyleSheet('background-color: cyan')
+        self._pwidgets[i].ledtDispColorAndRole.setStyleSheet('background-color: cyan')
         
       if role == ALPHA:
         self._pwidgets[i].editRole.setText('Alpha')
