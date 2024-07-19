@@ -20,7 +20,6 @@ PLAYER5_IP = '172.16.44.5'  # 要編集
 
 MAX_RECV_SIZE = 1024*4
 
-
 class PlayerServer(QThread):
 
     # シグナル定義
