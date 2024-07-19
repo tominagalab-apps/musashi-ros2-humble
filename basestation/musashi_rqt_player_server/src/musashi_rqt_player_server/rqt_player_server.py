@@ -60,7 +60,6 @@ GOAL_C = 46
 DROP_BALL = 55
 CALIB_COMPASS = 66
 
-
 class RqtPlayerServer(Plugin):
     def __init__(self, context):
         super(RqtPlayerServer, self).__init__(context)
@@ -651,10 +650,8 @@ class RqtPlayerServer(Plugin):
     @Slot(int, PlayerState)
     def onRecievedPlayerData(self, id, player_state):
         self._node.get_logger().debug('Player No:{}, states={}'.format(id, player_state))
-
         player_state.header.stamp = self._node.get_clock().now().to_msg()
         self._player_states.players[id - 1] = player_state  # 配列に代入
-
         return
 
     def roles_dicision(self,):
