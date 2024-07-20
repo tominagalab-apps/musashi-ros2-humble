@@ -29,6 +29,10 @@ class RefBoxClient(QThread):
     # デストラクタ
     def __del__(self,):
         pass
+    
+    # ホストIPアドレス取得
+    def getHostIP(self):
+        return socket.gethostbyname(socket.gethostname())
 
     # 接続（サーバへのログイン）処理メソッド
     def connect(self, address, port):
