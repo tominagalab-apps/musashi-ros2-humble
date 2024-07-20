@@ -20,6 +20,7 @@ PLAYER5_IP = '172.16.44.5'  # 要編集
 
 MAX_RECV_SIZE = 1024*4
 
+
 class PlayerServer(QThread):
 
     # シグナル定義
@@ -88,16 +89,16 @@ class PlayerServer(QThread):
             player_state.id = int(values[1])
             player_state.action = int(values[2])
             player_state.state = int(values[3])
-            player_state.ball.distance = float(values[4])
-            player_state.ball.angle = float(values[5])
-            player_state.goal.distance = float(values[6])
-            player_state.goal.angle = float(values[7])
-            player_state.my_goal.distance = float(values[8])
-            player_state.my_goal.angle = float(values[9])
+            player_state.ball.distance = float(values[4])*0.01
+            player_state.ball.angle = float(values[5])*0.01
+            player_state.goal.distance = float(values[6])*0.01
+            player_state.goal.angle = float(values[7])*0.01
+            player_state.my_goal.distance = float(values[8])*0.01
+            player_state.my_goal.angle = float(values[9])*0.01
 
-            player_state.position.position.x = float(values[10])
-            player_state.position.position.y = float(values[11])
-            angle = float(values[12])
+            player_state.position.position.x = float(values[10])*0.01
+            player_state.position.position.y = float(values[11])*0.01
+            angle = float(values[12])*0.01
             [qx, qy, qz, qw] = self.euler_to_quaternion(0, 0, angle)
             player_state.position.orientation.x = qx
             player_state.position.orientation.y = qy
@@ -107,16 +108,16 @@ class PlayerServer(QThread):
             player_state.role = int(values[13])
             player_state.haveball = int(values[14])
 
-            player_state.moveto.position.x = float(values[15])
-            player_state.moveto.position.y = float(values[16])
-            angle = float(values[17])
+            player_state.moveto.position.x = float(values[15])*0.01
+            player_state.moveto.position.y = float(values[16])*0.01
+            angle = float(values[17])*0.01
             [qx, qy, qz, qw] = self.euler_to_quaternion(0, 0, angle)
             player_state.moveto.orientation.x = qx
             player_state.moveto.orientation.y = qy
             player_state.moveto.orientation.z = qz
             player_state.moveto.orientation.w = qw
 
-            player_state.obstacle.distance = float(values[18])
+            player_state.obstacle.distance = float(values[18])*0.01
             # player_state.obstacle.angle = float(values[19])
 
             # シグナル発行

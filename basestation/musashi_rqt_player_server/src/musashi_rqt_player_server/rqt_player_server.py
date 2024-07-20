@@ -60,6 +60,7 @@ GOAL_C = 46
 DROP_BALL = 55
 CALIB_COMPASS = 66
 
+
 class RqtPlayerServer(Plugin):
     def __init__(self, context):
         super(RqtPlayerServer, self).__init__(context)
@@ -375,20 +376,19 @@ class RqtPlayerServer(Plugin):
             TransformStamped(),
             TransformStamped(),
         ]
-        
-        for i,player in enumerate(self._player_states.players):
+
+        for i, player in enumerate(self._player_states.players):
             trs[i].header.stamp = now
             trs[i].header.frame_id = 'world'
-            trs[i].child_frame_id = 'player'+ str(i + 1) + '/base_link'
-            trs[i].transform.translation.x = self._player_states.players[i].position.position.x
-            trs[i].transform.translation.y = self._player_states.players[i].position.position.y
-            trs[i].transform.translation.z = self._player_states.players[i].position.position.z
-            trs[i].transform.rotation.x = self._player_states.players[i].position.orientation.x
-            trs[i].transform.rotation.y = self._player_states.players[i].position.orientation.y
-            trs[i].transform.rotation.z = self._player_states.players[i].position.orientation.z
-            trs[i].transform.rotation.w = self._player_states.players[i].position.orientation.w
+            trs[i].child_frame_id = 'player' + str(i + 1) + '/base_link'
+            trs[i].transform.translation.x = player.position.position.x
+            trs[i].transform.translation.y = player.position.position.y
+            trs[i].transform.translation.z = player.position.position.z
+            trs[i].transform.rotation.x = player.position.orientation.x
+            trs[i].transform.rotation.y = player.position.orientation.y
+            trs[i].transform.rotation.z = player.position.orientation.z
+            trs[i].transform.rotation.w = player.position.orientation.w
             self.brs[i].sendTransform(trs[i])
-        
 
         # for player_state in self._player_states.players:
         #     now = self._node.get_clock().now().to_msg()
