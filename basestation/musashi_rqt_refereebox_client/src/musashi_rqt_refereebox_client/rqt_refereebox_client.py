@@ -17,6 +17,10 @@ GUI_UPDATE_PERIOD = 0.033  # GUIの更新周期[s]
 PERIOD = 0.25  # タイマコールバックの実行周期[s]
 
 class RqtRefereeBoxClient(Plugin):
+    
+    # メンバ変数定義
+    _refbox_client = RefBoxClient()
+    
     def __init__(self, context):
         super(RqtRefereeBoxClient, self).__init__(
             context)  # 親クラス(Pluginクラス)のコンストラクタ呼び出し
@@ -27,13 +31,15 @@ class RqtRefereeBoxClient(Plugin):
         #
         # メンバ変数の作成
         #
-        self._refbox_client = None
         self.is_connected_refbox = False
 
         #
         #
         #
         self.create_ui()  # UIをロード，描画領域に追加
+        
+        self._widget.lblOwnIP.setText(self._refbox_client.getHostIP())
+        
         self.connect_signals_slots()  # GUIのシグナルスロット接続
         self.create_publishers()  # パブリッシャーの作成
         self.create_subscribers()  # サブスクライバーの作成
