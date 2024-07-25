@@ -389,6 +389,7 @@ class RqtPlayerServer(Plugin):
             trs[i].transform.rotation.z = player.position.orientation.z
             trs[i].transform.rotation.w = player.position.orientation.w
             self.brs[i].sendTransform(trs[i])
+            
 
         # for player_state in self._player_states.players:
         #     now = self._node.get_clock().now().to_msg()
