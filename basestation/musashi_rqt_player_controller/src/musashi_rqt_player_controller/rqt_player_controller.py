@@ -21,7 +21,6 @@ GAMMA = 3
 DELTA = 4
 GOALIE = 5
 
-
 class RqtPlayerController(Plugin):
     def __init__(self, context):
         super(RqtPlayerController, self).__init__(context)
@@ -37,26 +36,7 @@ class RqtPlayerController(Plugin):
         # コンテキストに作成したウィジェットを追加
         # これをしないとGUI画面が表示されない
         self._context.add_widget(self._widget)
-
-<<<<<<< HEAD
-      if color == MAGENTA:        
-        self._pwidgets[i].ledtDispColorAndRole.setStyleSheet('background-color: magenta')
-      elif color == CYAN:
-        self._pwidgets[i].ledtDispColorAndRole.setStyleSheet('background-color: cyan')
         
-      if role == ALPHA:
-        self._pwidgets[i].editRole.setText('Alpha')
-      if role == BETA:
-        self._pwidgets[i].editRole.setText('Beta')
-      if role == GAMMA:
-        self._pwidgets[i].editRole.setText('Gamma')
-      if role == DELTA:
-        self._pwidgets[i].editRole.setText('Delta')
-      if role == GOALIE:
-        self._pwidgets[i].editRole.setText('Goalie')
-      
-    return
-=======
         # サブスクライバーの作成
         self._sub_player_states = self._node.create_subscription(
             PlayerStates,
@@ -151,4 +131,3 @@ class RqtPlayerController(Plugin):
                 self._pwidgets[i].ledtDispColorAndRole.setText('Goalie')
 
         return
->>>>>>> devel
