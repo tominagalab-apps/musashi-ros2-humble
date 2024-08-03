@@ -19,6 +19,7 @@ class FieldPublisher(Node):
         self.declare_parameter('penalty_area_length', 2.25)
         self.declare_parameter('penalty_area_width', 6.9)
         self.declare_parameter('line_width', 0.125)
+        self.declare_parameter('center_circle_radius', 2.0)
 
         # フィールドオブジェクトのパブリッシャー定義
         self.publisher = self.create_publisher(MarkerArray, 'soccer_field', 1)
@@ -40,6 +41,8 @@ class FieldPublisher(Node):
             'penalty_area_width').get_parameter_value().double_value
         self.line_width = self.get_parameter(
             'line_width').get_parameter_value().double_value
+        self.center_circle_radius = self.get_parameter(
+            'center_circle_radius').get_parameter_value().double_value
 
     def timer_callback(self):
         marker_array = MarkerArray()
@@ -59,6 +62,9 @@ class FieldPublisher(Node):
 
         # ラインの幅をROSパラメータから取得した値に置き換える
         line_width = self.line_width
+        
+        # センターサークルの半径をROSパラメータから取得した値に置き換える
+        center_circle_radius = self.center_circle_radius
 
         # フィールド平面を緑色にするための矩形を追加
         marker = Marker()
@@ -130,7 +136,7 @@ class FieldPublisher(Node):
         marker_id += 1
 
         # センターサークル
-        center_diameter = 4.0 - line_width  # meters (直径 4m - 線幅の分)
+        center_diameter = 2.0*center_circle_radius - line_width  # meters (直径 4m - 線幅の分)
         marker = self.create_circle_marker(
             marker_id, center_diameter, width=line_width)
         marker.color.r = 1.0  # Red color

@@ -9,3 +9,4 @@ field_publisher:
     penalty_area_length: 2.25 # ペナルティエリア長さ[m]
     penalty_area_width: 6.9 # ペナルティエリア幅[m]
     line_width: 0.125 # ライン幅[m]
+    center_circle_radius: 2.0 # センターサークル半径[m]
