@@ -8,9 +8,8 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from ament_index_python.packages import get_package_share_directory
 import os
 
-# colcon_ws_path = '/home/ubuntu/colcon_ws'
-# colcon_ws_path = '/home/aviken/colcon_ws'
 colcon_ws_path = os.environ.get('HOME') + '/colcon_ws'
+FIELD_CONFIG_FILE_NAME = 'field_parameters_demo.yaml'
 
 def generate_launch_description():
 
@@ -23,7 +22,7 @@ def generate_launch_description():
     field_parameter_path = os.path.join(
         get_package_share_directory('musashi_rviz'),
         'config',
-        'field_parameters.yaml'
+        FIELD_CONFIG_FILE_NAME
     )
 
     return LaunchDescription([
