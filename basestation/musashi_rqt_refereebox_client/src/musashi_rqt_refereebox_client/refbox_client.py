@@ -3,36 +3,69 @@ from python_qt_binding.QtCore import QThread, Signal
 import socket
 from datetime import datetime, timezone
 import json
+import logging
+import traceback
 
 from musashi_msgs.msg import PlayerState
 from musashi_msgs.msg import PlayerStates
 
 from musashi_rqt_refereebox_client import json_log
 
-MAX_RECV_SIZE = 1024*4  # byte
+MAX_RECV_SIZE = 1024 * 4  # byte
+
 
 class RefBoxClient(QThread):
 
-    # シグナル定義
+    # シグナル定義 (既存コードとの互換性維持のため綴りは変更しない)
     recievedCommand = Signal(bytes, str, str)
 
-    # コンストラクタ
-    def __init__(self,):
+    def __init__(self, verbose=False):
+        """TCP 接続を扱うスレッド。
+
+        Args:
+            verbose (bool): True の場合は標準出力へ詳細を出す（デバッグ用）。
+        """
         super(RefBoxClient, self).__init__()
 
-        # ソケットの作成．ソケットはメンバ変数
-        # IPv4, TCP設定
+        # ログ
+        self._logger = logging.getLogger(__name__)
+        self._verbose = verbose
+
+        # ソケットの作成 (IPv4, TCP)
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+        # 実行フラグ
         self._isRun = True
 
-    # デストラクタ
+        # 受信バッファ (部分受信対応)
+        self._recv_buffer = b''
+
+        # 互換性のために受信シグナルの別名を用意（将来のリファクタ用）
+        self.receivedCommand = self.recievedCommand
+
     def __del__(self,):
+        # 明示的なクリーンアップは `disconnect()` を使うこと
         pass
-    
+
+    def _log(self, level, *args):
+        # verbose モードなら print、そうでなければ logger
+        msg = ' '.join(str(a) for a in args)
+        if self._verbose:
+            print(msg)
+        else:
+            if level == 'info':
+                self._logger.info(msg)
+            elif level == 'error':
+                self._logger.error(msg)
+            else:
+                self._logger.debug(msg)
+
     # ホストIPアドレス取得
     def getHostIP(self):
-        return socket.gethostbyname(socket.gethostname())
+        try:
+            return socket.gethostbyname(socket.gethostname())
+        except Exception:
+            return '127.0.0.1'
 
     # 接続（サーバへのログイン）処理メソッド
     def connect(self, address, port):
@@ -41,7 +74,7 @@ class RefBoxClient(QThread):
             self._socket.settimeout(3)  # timeout [sec]
             self._socket.connect((address, port))
         except Exception as e:
-            print(e)
+            self._log('error', 'Failed to connect:', e)
             return False
 
         # 接続完了した時刻を記録する（UTC）
@@ -52,9 +85,21 @@ class RefBoxClient(QThread):
 
     # 切断処理メソッド
     def disconnect(self,):
+        # 安全にスレッドを停止してソケットを閉じる
         self._isRun = False
-        self._socket.close()
-        self.join()
+        try:
+            # 送信・受信を停止させる
+            try:
+                self._socket.shutdown(socket.SHUT_RDWR)
+            except Exception:
+                pass
+            self._socket.close()
+        finally:
+            # スレッドが終了するのを待つ (タイムアウト付き)
+            try:
+                self.join(timeout=2.0)
+            except Exception:
+                pass
 
     # レフェリーボックスへログデータ（json）を送信する関数
     # player_statesメッセージのデータを読み取ってレフェリーボックスに送信するjsonデータを作成する
@@ -128,8 +173,16 @@ class RefBoxClient(QThread):
         # 辞書型からjsonデータへ変換（パラメータはテキトウ）
         json_data = json.dumps(data, ensure_ascii=False, indent=4)
 
-        # 送信処理
-        self._socket.send(json_data.encode())  # encode()でバイナリデータに変換して送信
+        # プロトコル互換性: サーバが NULL 終端でメッセージを期待している場合があるため '\0' を付与
+        payload = (json_data + '\0').encode('utf-8')
+
+        try:
+            # 送信は sendall を使って全データを保証
+            self._socket.sendall(payload)
+        except Exception as e:
+            self._log('error', 'Failed to send json log:', e)
+            # 送信失敗時は接続状況を見てスレッド停止
+            self._isRun = False
 
         return
 
@@ -137,20 +190,62 @@ class RefBoxClient(QThread):
     def run(self,):
         # ブロッキングモード設定
         self._socket.settimeout(None)
-
+        # 受信は NULL ('\0') 終端で区切られる想定なので、バッファに蓄積しつつ
+        # 完成したメッセージを切り出して処理する
         while self._isRun:
-            # RefereeBoxからのコマンド受信待ち
-            recv = self._socket.recv(MAX_RECV_SIZE)
-            
-            # コマンドは全てjson形式のテキストデータで送られてきます
-            # データ末尾にはNULL（'\0'）が入れられているみたいです
-            # 文字列（str）型の末尾１文字を削除している
-            recv_json = json.loads(recv.decode('utf-8')[:-1])
+            try:
+                chunk = self._socket.recv(MAX_RECV_SIZE)
+                if not chunk:
+                    # 空バイト列は接続切断を意味する
+                    self._log('info', 'Connection closed by peer')
+                    break
 
-            # recv_jsonは辞書型
-            # キーは'command'と'targetTeam'の二つ，各値を取得する
-            command = recv_json['command']
-            targetTeam = recv_json['targetTeam']
+                # バッファに追加
+                self._recv_buffer += chunk
 
-            # シグナルの発行
-            self.recievedCommand.emit(recv, command, targetTeam)
+                # NULL 終端で分割してメッセージを取り出す
+                while b'\0' in self._recv_buffer:
+                    msg, sep, rest = self._recv_buffer.partition(b'\0')
+                    self._recv_buffer = rest
+
+                    try:
+                        # デコードして JSON をパース
+                        text = msg.decode('utf-8')
+                        recv_json = json.loads(text)
+                    except Exception as e:
+                        # パース失敗はログに記録して次へ
+                        self._log('error', 'Failed to parse incoming message:', e)
+                        if self._verbose:
+                            self._log('error', 'Raw message:', msg)
+                        continue
+
+                    # 受信した辞書から値を取り出す
+                    command = recv_json.get('command', '')
+                    targetTeam = recv_json.get('targetTeam', '')
+
+                    # シグナルの発行 (生データと抽出したフィールドを送る)
+                    try:
+                        self.recievedCommand.emit(msg + b'\0', command, targetTeam)
+                    except Exception:
+                        # シグナル送出時の例外はログに残す
+                        self._log('error', 'Failed to emit recievedCommand signal')
+                        self._log('error', traceback.format_exc())
+
+            except Exception as e:
+                # 受信ループでエラー発生 -> ログに残して終了
+                self._log('error', 'Exception in receive loop:', e)
+                if self._verbose:
+                    self._log('error', traceback.format_exc())
+                break
+
+        # ループ終了時はソケットを閉じ、実行フラグを下ろす
+        try:
+            try:
+                self._socket.shutdown(socket.SHUT_RDWR)
+            except Exception:
+                pass
+            self._socket.close()
+        except Exception:
+            pass
+
+        self._isRun = False

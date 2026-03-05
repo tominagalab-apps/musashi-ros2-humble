@@ -11,9 +11,22 @@ basestationは以下の二つの画面で構成されている．両方の画面
 
 ## 実行方法  
 ### rviz画面  
-以下をターミナルで実行することで設定済みのrviz2が起動する．  
-`ros2 launch musashi_rviz bringup_launch.py`  
-[bringup_launch.py](./musashi_rviz/launch/bringup_launch.py)はpythonで記述したlaunchファイルである．  
+以下をターミナルで実行することで設定済みのrviz2が起動する．
+
+```bash
+ros2 launch musashi_rviz bringup_launch.py
+```
+
+[bringup_launch.py](./musashi_rviz/launch/bringup_launch.py) はトップレベルの launch で、
+フィールド表示ノード・RViz を起動し、プレイヤー分の `player_spawn_launch.py` を含む `team_spawn_launch.py` を起動します。
+
+プレイヤー数を変更したい場合は `team_spawn_launch.py` の `player_num` 引数を使います（デフォルトは 5）。例:
+
+```bash
+ros2 launch musashi_rviz team_spawn_launch.py player_num:=3
+```
+
+各プレイヤーのフレームプレフィックスは内部で `player1/`, `player2/` のように設定されます。
 ### rqt画面  
 以下をターミナルで実行する．  
 `rqt`  
@@ -21,6 +34,16 @@ basestationは以下の二つの画面で構成されている．両方の画面
 1. Hibikino-Musashiの**RefereeBoxClient**  
 1. Hibikino-Musashiの**PlayerServer**  
 1. Hibikino-Musashiの**PlayerController**  
+
+#### 重要な変更点（最近の更新）
+- `PlayerServer` プラグインに **Start / Stop** ボタンを追加しました。起動時に自動でサーバを立ち上げず、GUI から明示的に開始・停止できます。
+- `PlayerServer` の UI に **Bind IP (Own IP)** と **Port** 入力欄を追加しました。複数インターフェース環境ではここでバインド先を指定してください。
+- `musashi_rviz` の起動引数 `player_num` を導入しました（デフォルトは 5）。RViz 側のプレイヤー数と `PlayerServer` の送受信は一致させてください。
+- RefereeBox クライアントは受信バッファを実装し、NULL 終端（`\0`）でメッセージを区切ってパースするよう改善しました。部分受信や複数メッセージの連結に対して堅牢になっています。
+
+これらにより、運用時に以下を意識してください：
+- `PlayerServer` を使う場合はまず GUI 上で `Start` を押してからプレイヤーとの通信を開始してください。
+- RefereeBox サーバはメッセージ末尾に `\0` を付与して送信する想定です（互換性のためクライアント側は `\0` を許容します）。
 
 ## ディレクトリ構成  
 <pre>

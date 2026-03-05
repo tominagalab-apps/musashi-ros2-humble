@@ -18,8 +18,7 @@ PERIOD = 0.25  # タイマコールバックの実行周期[s]
 
 class RqtRefereeBoxClient(Plugin):
     
-    # メンバ変数定義
-    _refbox_client = RefBoxClient()
+    # メンバ変数定義は __init__ 内で行う（プラグインを複数立ち上げたときの副作用回避）
     
     def __init__(self, context):
         super(RqtRefereeBoxClient, self).__init__(
@@ -37,8 +36,19 @@ class RqtRefereeBoxClient(Plugin):
         #
         #
         self.create_ui()  # UIをロード，描画領域に追加
-        
-        self._widget.lblOwnIP.setText(self._refbox_client.getHostIP())
+
+        # RefBoxClient は接続時に生成するためここでは None を設定
+        self._refbox_client = None
+
+        # player_states を初期化しておく（タイマーで未設定参照されるのを防ぐ）
+        self.player_states = None
+
+        # ホストIPを表示するために一時的に RefBoxClient を生成して取得（破棄してよい）
+        try:
+            host_ip = RefBoxClient().getHostIP()
+        except Exception:
+            host_ip = '127.0.0.1'
+        self._widget.lblOwnIP.setText(host_ip)
         
         self.connect_signals_slots()  # GUIのシグナルスロット接続
         self.create_publishers()  # パブリッシャーの作成
@@ -114,7 +124,16 @@ class RqtRefereeBoxClient(Plugin):
     # シャットダウン時処理
     def shutdown_plugin(self):
         # 終了時はタイマーを止める
+        # タイマー停止
         self._timer.stop()
+
+        # プラグイン終了時に RefBoxClient が動作中なら安全に切断する
+        try:
+            if getattr(self, '_refbox_client', None) is not None:
+                self._refbox_client.disconnect()
+                self._refbox_client = None
+        except Exception:
+            self._node.get_logger().error('Error disconnecting RefBoxClient during shutdown')
 
     # プラグインの設定保存処理
     def save_settings(self, plugin_settings, instance_settings):
@@ -133,7 +152,15 @@ class RqtRefereeBoxClient(Plugin):
         # レフェリーボックスへログの送信を行う．周期的に送信する必要があるためタイマコールバックで実行することになる
         # 全てのプレイヤーの情報はメンバ変数 self.player_states(PlayerStatesメッセージ型) に入っている
         if self.is_connected_refbox == True:
-            self._refbox_client.send_jsonlog(self.player_states)
+            # player_states が受信済みか確認してから送信する
+            if getattr(self, 'player_states', None) is not None:
+                try:
+                    self._refbox_client.send_jsonlog(self.player_states)
+                except Exception as e:
+                    self._node.get_logger().error(f'Failed to send json log: {e}')
+            else:
+                # まだ player_states が無い場合はスキップしてログ出力
+                self._node.get_logger().info('player_states not available yet; skipping send_jsonlog')
 
         return
 
@@ -177,16 +204,26 @@ class RqtRefereeBoxClient(Plugin):
                     'Failed to connect to RefereeBox. Please check network connection status.')
 
                 self._widget.chckConnect.setCheckState(False)
+                # 接続に失敗したインスタンスがあれば切断処理
+                try:
+                    if self._refbox_client is not None:
+                        self._refbox_client.disconnect()
+                except Exception:
+                    pass
                 self._refbox_client = None
 
                 # 接続中フラグをFalseへ
                 self.is_connected_refbox = False
 
         else:  # チェックが外れた → 切断処理
-            # self._refbox_client.disconnect()
-            # self._refbox_client.join()
-            self._refbox_client = None  # デストラクタの呼び出し
-            # pythonでは一応自動的にメモリ解放されるっぽい
+            # 安全に切断する
+            try:
+                if self._refbox_client is not None:
+                    self._refbox_client.disconnect()
+            except Exception:
+                self._node.get_logger().error('Error during disconnect of RefBoxClient')
+            finally:
+                self._refbox_client = None
 
             # 接続中フラグをFalseへ
             self.is_connected_refbox = False

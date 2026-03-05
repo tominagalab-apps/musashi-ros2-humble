@@ -59,6 +59,7 @@ GOAL_M = 36
 GOAL_C = 46
 DROP_BALL = 55
 CALIB_COMPASS = 66
+NUM_PLAYERS = 5
 
 
 class RqtPlayerServer(Plugin):
@@ -72,7 +73,10 @@ class RqtPlayerServer(Plugin):
         self._refcmd = RefereeCmd()
 
         # チームの情報（プレイヤー情報の配列）
+        # PlayerStates を NUM_PLAYERS 要素の PlayerState で初期化しておく
         self._player_states = PlayerStates()
+        for i in range(NUM_PLAYERS):
+            self._player_states.players.append(PlayerState())
 
         # チームカラー
         self._team_color = TEAM_COLOR
@@ -98,26 +102,22 @@ class RqtPlayerServer(Plugin):
             10
         )
 
-        # tfブロードキャスター作成
-        self.brs = [
-            tf2_ros.TransformBroadcaster(self._node),
-            tf2_ros.TransformBroadcaster(self._node),
-            tf2_ros.TransformBroadcaster(self._node),
-            tf2_ros.TransformBroadcaster(self._node),
-            tf2_ros.TransformBroadcaster(self._node),
-        ]
+        # tfブロードキャスター作成（NUM_PLAYERS に合わせて動的生成）
+        self.brs = [tf2_ros.TransformBroadcaster(self._node) for _ in range(NUM_PLAYERS)]
 
-        # PlayerServer作成，シグナルスロット接続，起動
-        self._player_server = PlayerServer()  # PlayerServerインスタンス作成
-        self._player_server.recievedPlayerData.connect(
-            self.onRecievedPlayerData)  # シグナルスロット接続
+        # PlayerServer は Start/Stop ボタンで制御する（自動起動しない）
+        self._player_server = None
+        self._player_server_running = False
+
+        # Start/Stop ボタンのシグナル接続
         try:
-            self._player_server.open()  # プレイヤーサーバのオープン
-        except Exception as e:
-            self._node.get_logger().warning('{}'.format(e))
-            self._node.get_logger().warning('Please confirm OWN_IP value in player_server.py')
-
-        self._player_server.start()  # UDP通信の受信スレッド開始
+            self._widget.btnStartServer.clicked.connect(self.on_start_player_server)
+        except Exception:
+            pass
+        try:
+            self._widget.btnStopServer.clicked.connect(self.on_stop_player_server)
+        except Exception:
+            pass
 
         # GUIスレッドのスタート
         self.start_ui_thread()
@@ -168,13 +168,63 @@ class RqtPlayerServer(Plugin):
     def shutdown_plugin(self):
         # 終了時はタイマーを止める
         self._timer.stop()
-        self._player_server.close()
+        # プラグイン終了時に PlayerServer が動作中なら安全に切断
+        try:
+            if getattr(self, '_player_server', None) is not None:
+                self._player_server.close()
+        except Exception:
+            self._node.get_logger().error('Error closing PlayerServer during shutdown')
 
     def save_settings(self, plugin_settings, instance_settings):
         pass
 
     def restore_settings(self, plugin_settings, instance_settings):
         pass
+
+    # ------------------------------
+    # PlayerServer start/stop handlers
+    # ------------------------------
+    def on_start_player_server(self):
+        # Start ボタンが押されたときに PlayerServer を生成して起動する
+        if self._player_server_running:
+            self._node.get_logger().info('PlayerServer already running')
+            return
+
+        try:
+            bind_ip = self._widget.lnedtOwnIP.text().strip()
+        except Exception:
+            bind_ip = None
+        try:
+            bind_port = int(self._widget.lnedtPort.text())
+        except Exception:
+            bind_port = None
+
+        self._player_server = PlayerServer(own_ip=bind_ip, port=bind_port)
+        self._player_server.recievedPlayerData.connect(self.onRecievedPlayerData)
+        try:
+            self._player_server.open()
+        except Exception as e:
+            self._node.get_logger().warning('Failed to open PlayerServer: {}'.format(e))
+            return
+
+        self._player_server.start()
+        self._player_server_running = True
+        self._node.get_logger().info(f'PlayerServer started on {bind_ip}:{bind_port}')
+
+    def on_stop_player_server(self):
+        # Stop ボタンで PlayerServer を停止する
+        if not self._player_server_running or self._player_server is None:
+            self._node.get_logger().info('PlayerServer not running')
+            return
+
+        try:
+            self._player_server.close()
+        except Exception as e:
+            self._node.get_logger().error('Error stopping PlayerServer: {}'.format(e))
+        finally:
+            self._player_server = None
+            self._player_server_running = False
+            self._node.get_logger().info('PlayerServer stopped')
 
     # レフェリーボックスコマンドのサブスクライバ-コールバック関数
     def refcmd_callback(self, msg):
@@ -413,234 +463,91 @@ class RqtPlayerServer(Plugin):
 
     def timer_callback_send_to_players(self,):
 
-        # 返信内容はコマンド＋全プレイヤーのデータ
-        send_data = struct.pack(
-            'ii',
-            5,  # aliveNum
-            self._team_color,  # color
-        )
+        players = self._player_states.players
 
-        # commandリスト作成,結合
-        send_data = send_data + struct.pack(
-            'iiiii',
-            self.teamcmd,
-            self.teamcmd,
-            self.teamcmd,
-            self.teamcmd,
-            self.teamcmd,
-        )
+        def get_float(pl, path, default=0.0):
+            try:
+                val = pl
+                for p in path.split('.'):
+                    val = getattr(val, p)
+                return float(val)
+            except Exception:
+                return default
 
-        # stateリスト結合
-        send_data = send_data + struct.pack(
-            'iiiii',
-            self._player_states.players[0].state,
-            self._player_states.players[1].state,
-            self._player_states.players[2].state,
-            self._player_states.players[3].state,
-            self._player_states.players[4].state
-        )
+        def get_int(pl, path, default=0):
+            try:
+                val = pl
+                for p in path.split('.'):
+                    val = getattr(val, p)
+                return int(val)
+            except Exception:
+                return default
 
-        # ball_distanceリスト作成，結合
-        send_data = send_data + struct.pack(
-            'ddddd',
-            self._player_states.players[0].ball.distance,
-            self._player_states.players[1].ball.distance,
-            self._player_states.players[2].ball.distance,
-            self._player_states.players[3].ball.distance,
-            self._player_states.players[4].ball.distance,
-        )
+        # header
+        send_data = struct.pack('ii', NUM_PLAYERS, self._team_color)
 
-        # ball_angleリスト作成，結合
-        send_data = send_data + struct.pack(
-            'ddddd',
-            self._player_states.players[0].ball.angle,
-            self._player_states.players[1].ball.angle,
-            self._player_states.players[2].ball.angle,
-            self._player_states.players[3].ball.angle,
-            self._player_states.players[4].ball.angle,
-        )
+        # commands
+        cmds = [self.teamcmd for _ in range(NUM_PLAYERS)]
+        send_data += struct.pack(''.join(['i' for _ in range(NUM_PLAYERS)]), *cmds)
 
-        # goal_distanceリスト作成，結合Ï
-        send_data = send_data + struct.pack(
-            'ddddd',
-            self._player_states.players[0].goal.distance,
-            self._player_states.players[1].goal.distance,
-            self._player_states.players[2].goal.distance,
-            self._player_states.players[3].goal.distance,
-            self._player_states.players[4].goal.distance,
-        )
+        # states
+        states = [get_int(players[i], 'state') if i < len(players) else 0 for i in range(NUM_PLAYERS)]
+        send_data += struct.pack(''.join(['i' for _ in range(NUM_PLAYERS)]), *states)
 
-        # goal_angleリスト作成，結合Ï
-        send_data = send_data + struct.pack(
-            'ddddd',
-            self._player_states.players[0].goal.angle,
-            self._player_states.players[1].goal.angle,
-            self._player_states.players[2].goal.angle,
-            self._player_states.players[3].goal.angle,
-            self._player_states.players[4].goal.angle,
-        )
+        # float fields helper list
+        float_fields = [
+            'ball.distance',
+            'ball.angle',
+            'goal.distance',
+            'goal.angle',
+            'my_goal.distance',
+            'my_goal.angle',
+            'position.position.x',
+            'position.position.y',
+        ]
 
-        # my_goal.distanceリスト作成，結合Ï
-        send_data = send_data + struct.pack(
-            'ddddd',
-            self._player_states.players[0].my_goal.distance,
-            self._player_states.players[1].my_goal.distance,
-            self._player_states.players[2].my_goal.distance,
-            self._player_states.players[3].my_goal.distance,
-            self._player_states.players[4].my_goal.distance,
-        )
+        for field in float_fields:
+            vals = [get_float(players[i], field) if i < len(players) else 0.0 for i in range(NUM_PLAYERS)]
+            send_data += struct.pack(''.join(['d' for _ in range(NUM_PLAYERS)]), *vals)
 
-        # my_goal.angleリスト作成，結合Ï
-        send_data = send_data + struct.pack(
-            'ddddd',
-            self._player_states.players[0].my_goal.angle,
-            self._player_states.players[1].my_goal.angle,
-            self._player_states.players[2].my_goal.angle,
-            self._player_states.players[3].my_goal.angle,
-            self._player_states.players[4].my_goal.angle,
-        )
+        # position.angle placeholder (RPY conversion required)
+        send_data += struct.pack(''.join(['d' for _ in range(NUM_PLAYERS)]), *([0.0] * NUM_PLAYERS))
 
-        # position.xリスト作成，結合Ï
-        send_data = send_data + struct.pack(
-            'ddddd',
-            self._player_states.players[0].position.position.x,
-            self._player_states.players[1].position.position.x,
-            self._player_states.players[2].position.position.x,
-            self._player_states.players[3].position.position.x,
-            self._player_states.players[4].position.position.x,
-        )
-        # position.yリスト作成，結合Ï
-        send_data = send_data + struct.pack(
-            'ddddd',
-            self._player_states.players[0].position.position.y,
-            self._player_states.players[1].position.position.y,
-            self._player_states.players[2].position.position.y,
-            self._player_states.players[3].position.position.y,
-            self._player_states.players[4].position.position.y,
-        )
-        # position.angleリスト作成，結合
-        # クォータニオンからRPYに変換する必要がある
-        send_data = send_data + struct.pack(
-            'ddddd',
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0
-        )
+        # roles
+        roles = self.roles_decision()
+        send_data += struct.pack(''.join(['i' for _ in range(NUM_PLAYERS)]), *roles)
 
-        # ロールの決定処理
-        roles = self.roles_dicision()
+        # haveball
+        haveballs = [get_int(players[i], 'haveball') if i < len(players) else 0 for i in range(NUM_PLAYERS)]
+        send_data += struct.pack(''.join(['i' for _ in range(NUM_PLAYERS)]), *haveballs)
 
-        # roleリスト作成，結合
-        send_data = send_data + struct.pack(
-            'iiiii',
-            roles[0],
-            roles[1],
-            roles[2],
-            roles[3],
-            roles[4],
-        )
+        # moveto x/y
+        moveto_x = [get_float(players[i], 'moveto.position.x') if i < len(players) else 0.0 for i in range(NUM_PLAYERS)]
+        moveto_y = [get_float(players[i], 'moveto.position.y') if i < len(players) else 0.0 for i in range(NUM_PLAYERS)]
+        send_data += struct.pack(''.join(['d' for _ in range(NUM_PLAYERS)]), *moveto_x)
+        send_data += struct.pack(''.join(['d' for _ in range(NUM_PLAYERS)]), *moveto_y)
 
-        # haveBallリスト作成，結合
-        send_data = send_data + struct.pack(
-            'iiiii',
-            self._player_states.players[0].haveball,
-            self._player_states.players[1].haveball,
-            self._player_states.players[2].haveball,
-            self._player_states.players[3].haveball,
-            self._player_states.players[4].haveball
-        )
+        # moveto.angle placeholder
+        send_data += struct.pack(''.join(['d' for _ in range(NUM_PLAYERS)]), *([0.0] * NUM_PLAYERS))
 
-        # moveto.xリスト作成，結合Ï
-        send_data = send_data + struct.pack(
-            'ddddd',
-            self._player_states.players[0].moveto.position.x,
-            self._player_states.players[1].moveto.position.x,
-            self._player_states.players[2].moveto.position.x,
-            self._player_states.players[3].moveto.position.x,
-            self._player_states.players[4].moveto.position.x,
-        )
+        # obstacle distance / angle
+        obstacles_d = [get_float(players[i], 'obstacle.distance') if i < len(players) else 0.0 for i in range(NUM_PLAYERS)]
+        obstacles_a = [get_float(players[i], 'obstacle.angle') if i < len(players) else 0.0 for i in range(NUM_PLAYERS)]
+        send_data += struct.pack(''.join(['d' for _ in range(NUM_PLAYERS)]), *obstacles_d)
+        send_data += struct.pack(''.join(['d' for _ in range(NUM_PLAYERS)]), *obstacles_a)
 
-        # moveto.yリスト作成，結合Ï
-        send_data = send_data + struct.pack(
-            'ddddd',
-            self._player_states.players[0].moveto.position.y,
-            self._player_states.players[1].moveto.position.y,
-            self._player_states.players[2].moveto.position.y,
-            self._player_states.players[3].moveto.position.y,
-            self._player_states.players[4].moveto.position.y,
-        )
+        # state_vector: position.x, position.y, position.angle placeholder
+        pos_x = [get_float(players[i], 'position.position.x') if i < len(players) else 0.0 for i in range(NUM_PLAYERS)]
+        pos_y = [get_float(players[i], 'position.position.y') if i < len(players) else 0.0 for i in range(NUM_PLAYERS)]
+        send_data += struct.pack(''.join(['d' for _ in range(NUM_PLAYERS)]), *pos_x)
+        send_data += struct.pack(''.join(['d' for _ in range(NUM_PLAYERS)]), *pos_y)
+        send_data += struct.pack(''.join(['d' for _ in range(NUM_PLAYERS)]), *([0.0] * NUM_PLAYERS))
 
-        # moveto.angleリスト作成，結合
-        # クォータニオンからRPYに変換する必要がある
-        send_data = send_data + struct.pack(
-            'ddddd',
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0
-        )
-
-        # oblstacle.distanceリスト作成，結合Ï
-        send_data = send_data + struct.pack(
-            'ddddd',
-            self._player_states.players[0].obstacle.distance,
-            self._player_states.players[1].obstacle.distance,
-            self._player_states.players[2].obstacle.distance,
-            self._player_states.players[3].obstacle.distance,
-            self._player_states.players[4].obstacle.distance,
-        )
-
-        # obstacle.angleリスト作成，結合Ï
-        send_data = send_data + struct.pack(
-            'ddddd',
-            self._player_states.players[0].obstacle.angle,
-            self._player_states.players[1].obstacle.angle,
-            self._player_states.players[2].obstacle.angle,
-            self._player_states.players[3].obstacle.angle,
-            self._player_states.players[4].obstacle.angle,
-        )
-
-        # state_vectorリスト作成，結合
-        # 多分position（自己位置）のデータだったはず
-        # position.xリスト作成，結合Ï
-        send_data = send_data + struct.pack(
-            'ddddd',
-            self._player_states.players[0].position.position.x,
-            self._player_states.players[1].position.position.x,
-            self._player_states.players[2].position.position.x,
-            self._player_states.players[3].position.position.x,
-            self._player_states.players[4].position.position.x,
-        )
-        # position.yリスト作成，結合Ï
-        send_data = send_data + struct.pack(
-            'ddddd',
-            self._player_states.players[0].position.position.y,
-            self._player_states.players[1].position.position.y,
-            self._player_states.players[2].position.position.y,
-            self._player_states.players[3].position.position.y,
-            self._player_states.players[4].position.position.y,
-        )
-        # position.angleリスト作成，結合
-        # クォータニオンからRPYに変換する必要がある
-        send_data = send_data + struct.pack(
-            'ddddd',
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0
-        )
-
-        # 送信処理
-        # print(len(send_data))
+        # send
         try:
             self._player_server.broadcast(send_data)
         except Exception as e:
-            self._node.get_logger().error(
-                '{}: Please confirm Player IP address in player_server.py'.format(e))
+            self._node.get_logger().error(f'{e}: Please confirm Player IP address in player_server.py')
 
         return
 
@@ -655,31 +562,39 @@ class RqtPlayerServer(Plugin):
         self._player_states.players[id - 1] = player_state  # 配列に代入
         return
 
-    def roles_dicision(self,):
+    def roles_decision(self,):
         # 静的ロール割り振り
-        roles = [ALPHA, BETA, GAMMA, DELTA, GOALIE]
+        # デフォルトは ALPHA を割り当て，最後のプレイヤーを GOALIE にする
+        roles = [ALPHA for _ in range(NUM_PLAYERS)]
+        if NUM_PLAYERS >= 1:
+            roles[-1] = GOALIE
 
         # -----
         # ここから頑張って各プレイヤーのロールを決定する処理
         # -----
         # （案１）ボールとの距離の近さ順にAlpha, Beta,...
         if ROLE_ASSIGN_METHOD == 1:
-
-            # 各プレイヤーのIDとball.distanceをタプルにしてリスト化
+            # 各プレイヤーの (index, ball.distance) をリスト化
             ball_distances = []
             for player in self._player_states.players:
-                tmp = (player.id, player.ball.distance)
-                if player.id != GOALIE:  # ゴーリーは除外する
-                    ball_distances.append(tmp)
+                try:
+                    pid = int(player.id)
+                    dist = float(player.ball.distance)
+                except Exception:
+                    continue
+                # ゴーリーは除外
+                if pid == GOALIE:
+                    continue
+                ball_distances.append((pid - 1, dist))
 
-            # 昇順（近い順に）ソート
+            # 昇順（近い順）ソート
             ball_distances.sort(key=lambda x: x[1])
 
-            # rolesを並び替え
-            roles[ball_distances[0]] = ALPHA
-            roles[ball_distances[1]] = BETA
-            roles[ball_distances[2]] = GAMMA
-            roles[ball_distances[3]] = DELTA
+            # 近い順に役割を割り当てる（存在する範囲で）
+            role_order = [ALPHA, BETA, GAMMA, DELTA]
+            for i, (idx, _) in enumerate(ball_distances[:len(role_order)]):
+                if 0 <= idx < NUM_PLAYERS:
+                    roles[idx] = role_order[i]
 
         # ロール決定処理ここまで
         return roles  # 結果
