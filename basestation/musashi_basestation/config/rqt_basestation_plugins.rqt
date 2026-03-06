@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<config version="1">
+  <!--
+    このファイルを rqt --load-config で読み込むと
+    以下のプラグインが自動的に有効化されます。
+    位置やパネルレイアウトなどは rqt で保存された状態に
+    応じて変化するため、必要に応じて GUI から編集して下さい。
+  -->
+  <plugin name="musashi_rqt_refereebox_client/RefereeBoxClient" enabled="true"/>
+  <plugin name="musashi_rqt_player_server/PlayerServer" enabled="true"/>
+  <plugin name="musashi_rqt_player_controller/PlayerController" enabled="true"/>
+</config>
