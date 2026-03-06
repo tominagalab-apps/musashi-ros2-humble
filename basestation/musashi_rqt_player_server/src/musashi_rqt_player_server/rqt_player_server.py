@@ -61,6 +61,15 @@ DROP_BALL = 55
 CALIB_COMPASS = 66
 NUM_PLAYERS = 5
 
+# コマンドマッピング（単純変換）
+COMMAND_MAP_SIMPLE = {
+    'START': START,
+    'STOP': STOP,
+    'DROP_BALL': DROP_BALL,
+    'FIRST_HALF': FIRST,
+    'SECOND_HALF': SECOND,
+    'WELCOME': WELCOME,
+}
 
 class RqtPlayerServer(Plugin):
     def __init__(self, context):
@@ -228,185 +237,67 @@ class RqtPlayerServer(Plugin):
 
     # レフェリーボックスコマンドのサブスクライバ-コールバック関数
     def refcmd_callback(self, msg):
+        """RefereeCmd を受信したときのコールバック。
+        単純変換は COMMAND_MAP_SIMPLE を使い、それ以外は
+        _map_targeted_command() で追加処理を行う。
+        """
         self._node.get_logger().info(
             'command={}, targetTeam={}'.format(msg.command, msg.target_team))
 
         self._refcmd = msg  # メンバ変数に格納
+        cmd = msg.command
 
-        # hibikino-musashiチーム内のコマンドへ変換
-        if self._refcmd.command == 'START':
-            self.teamcmd = START
-        elif self._refcmd.command == 'STOP':
-            self.teamcmd = STOP
-        elif self._refcmd.command == 'DROP_BALL':
-            self.teamcmd = DROP_BALL
-        elif self._refcmd.command == 'HALF_TIMER':
-            pass
-        elif self._refcmd.command == 'END_GAME':
-            pass
-        elif self._refcmd.command == 'GAME_OVER':
-            pass
-        elif self._refcmd.command == 'PARK':
-            pass
-        elif self._refcmd.command == 'FIRST_HALF':
-            self.teamcmd = FIRST
-        elif self._refcmd.command == 'SECOND_HALF':
-            self.teamcmd = SECOND
-        elif self._refcmd.command == 'FIRST_HALF_OVERTIME':
-            pass
-        elif self._refcmd.command == 'SECOND_HALF_OVERTIME':
-            pass
-        elif self._refcmd.command == 'WELCOME':
-            self.teamcmd = WELCOME
-        elif self._refcmd.command == 'KICKOFF':
-            if self._refcmd.target_team == TEAM_IP:
-                if self._team_color == MAGENTA:
-                    self.teamcmd = KICKOFF_M
-                else:
-                    self.teamcmd = KICKOFF_C
-            else:  # 相手のキックオフなら
-                if self._team_color == MAGENTA:
-                    self.teamcmd = KICKOFF_C
-                else:
-                    self.teamcmd = KICKOFF_M
-        elif self._refcmd.command == 'GOALKICK':
-            if self._refcmd.target_team == TEAM_IP:
-                if self._team_color == MAGENTA:
-                    self.teamcmd = GOAL_KICK_M
-                else:
-                    self.teamcmd = GOAL_KICK_C
-            else:  # 相手のキックオフなら
-                if self._team_color == MAGENTA:
-                    self.teamcmd = GOAL_KICK_C
-                else:
-                    self.teamcmd = GOAL_KICK_M
-        elif self._refcmd.command == 'THROWIN':
-            if self._refcmd.target_team == TEAM_IP:
-                if self._team_color == MAGENTA:
-                    self.teamcmd = THROWIN_M
-                else:
-                    self.teamcmd = THROWIN_C
-            else:  # 相手のキックオフなら
-                if self._team_color == MAGENTA:
-                    self.teamcmd = THROWIN_C
-                else:
-                    self.teamcmd = THROWIN_M
-        elif self._refcmd.command == 'CORNER':
-            if self._refcmd.target_team == TEAM_IP:
-                if self._team_color == MAGENTA:
-                    self.teamcmd = CORNER_KICK_M
-                else:
-                    self.teamcmd = CORNER_KICK_C
-            else:  # 相手のコーナーキックなら
-                if self._team_color == MAGENTA:
-                    self.teamcmd = CORNER_KICK_C
-                else:
-                    self.teamcmd = CORNER_KICK_M
-        elif self._refcmd.command == 'PENALTY':
-            if self._refcmd.target_team == TEAM_IP:
-                if self._team_color == MAGENTA:
-                    self.teamcmd = PENALTY_M
-                else:
-                    self.teamcmd = PENALTY_C
-            else:  # 相手のキックオフなら
-                if self._team_color == MAGENTA:
-                    self.teamcmd = PENALTY_C
-                else:
-                    self.teamcmd = PENALTY_M
-        elif self._refcmd.command == 'FREEKICK':
-            if self._refcmd.target_team == TEAM_IP:
-                if self._team_color == MAGENTA:
-                    self.teamcmd = FREE_KICK_M
-                else:
-                    self.teamcmd = FREE_KICK_C
-            else:  # 相手のキックオフなら
-                if self._team_color == MAGENTA:
-                    self.teamcmd = FREE_KICK_C
-                else:
-                    self.teamcmd = FREE_KICK_M
-        elif self._refcmd.command == 'GOAL':
-            if self._refcmd.target_team == TEAM_IP:
-                if self._team_color == MAGENTA:
-                    self.teamcmd = GOAL_M
-                else:
-                    self.teamcmd = GOAL_C
-            else:  # 相手のキックオフなら
-                if self._team_color == MAGENTA:
-                    self.teamcmd = GOAL_C
-                else:
-                    self.teamcmd = GOAL_M
-        elif self._refcmd.command == 'REPAIR':
-            if self._refcmd.target_team == TEAM_IP:
-                if self._team_color == MAGENTA:
-                    pass
-                else:
-                    pass
-            else:  # 相手のキックオフなら
-                if self._team_color == MAGENTA:
-                    pass
-                else:
-                    pass
-        elif self._refcmd.command == 'YELLOW_CARD':
-            if self._refcmd.target_team == TEAM_IP:
-                if self._team_color == MAGENTA:
-                    pass
-                else:
-                    pass
-            else:  # 相手のキックオフなら
-                if self._team_color == MAGENTA:
-                    pass
-                else:
-                    pass
-        elif self._refcmd.command == 'DOUBLE_YELLOW_CARD':
-            if self._refcmd.target_team == TEAM_IP:
-                if self._team_color == MAGENTA:
-                    pass
-                else:
-                    pass
-            else:  # 相手のキックオフなら
-                if self._team_color == MAGENTA:
-                    pass
-                else:
-                    pass
-        elif self._refcmd.command == 'RED_CARD':
-            if self._refcmd.target_team == TEAM_IP:
-                if self._team_color == MAGENTA:
-                    pass
-                else:
-                    pass
-            else:  # 相手のキックオフなら
-                if self._team_color == MAGENTA:
-                    pass
-                else:
-                    pass
-        elif self._refcmd.command == 'SUBSTITUTION':
-            if self._refcmd.target_team == TEAM_IP:
-                if self._team_color == MAGENTA:
-                    pass
-                else:
-                    pass
-            else:  # 相手のキックオフなら
-                if self._team_color == MAGENTA:
-                    pass
-                else:
-                    pass
-        elif self._refcmd.command == 'IS_ALIVE':
-            if self._refcmd.target_team == TEAM_IP:
-                if self._team_color == MAGENTA:
-                    pass
-                else:
-                    pass
-            else:  # 相手のキックオフなら
-                if self._team_color == MAGENTA:
-                    pass
-                else:
-                    pass
+        # 単純マッピング
+        if cmd in COMMAND_MAP_SIMPLE:
+            self.teamcmd = COMMAND_MAP_SIMPLE[cmd]
+        # ターゲット付きコマンド
+        elif cmd in ('KICKOFF', 'GOALKICK', 'THROWIN', 'CORNER',
+                     'PENALTY', 'FREEKICK', 'GOAL'):
+            self.teamcmd = self._map_targeted_command(cmd, msg.target_team)
+        # その他は現状維持（必要なら拡張）
         else:
             pass
 
         # UI上に表示
         self._widget.lblTeamCmd.setText(str(self.teamcmd))
         return
+
+    def _map_targeted_command(self, cmd, target_team):
+        """target_team およびチームカラーに応じて定数を返す。"""
+        # 自チームか相手かを判定
+        is_own = (target_team == TEAM_IP)
+        mag = (self._team_color == MAGENTA)
+
+        if cmd == 'KICKOFF':
+            return KICKOFF_M if is_own and mag else (
+                KICKOFF_C if is_own and not mag else (
+                    KICKOFF_C if mag else KICKOFF_M))
+        if cmd == 'GOALKICK':
+            return GOAL_KICK_M if is_own and mag else (
+                GOAL_KICK_C if is_own and not mag else (
+                    GOAL_KICK_C if mag else GOAL_KICK_M))
+        if cmd == 'THROWIN':
+            return THROWIN_M if is_own and mag else (
+                THROWIN_C if is_own and not mag else (
+                    THROWIN_C if mag else THROWIN_M))
+        if cmd == 'CORNER':
+            return CORNER_KICK_M if is_own and mag else (
+                CORNER_KICK_C if is_own and not mag else (
+                    CORNER_KICK_C if mag else CORNER_KICK_M))
+        if cmd == 'PENALTY':
+            return PENALTY_M if is_own and mag else (
+                PENALTY_C if is_own and not mag else (
+                    PENALTY_C if mag else PENALTY_M))
+        if cmd == 'FREEKICK':
+            return FREE_KICK_M if is_own and mag else (
+                FREE_KICK_C if is_own and not mag else (
+                    FREE_KICK_C if mag else FREE_KICK_M))
+        if cmd == 'GOAL':
+            return GOAL_M if is_own and mag else (
+                GOAL_C if is_own and not mag else (
+                    GOAL_C if mag else GOAL_M))
+        # デフォルト
+        return self.teamcmd
 
     # PlayerStatesをパブリッシュするタイマコールバック関数
     def timer_callback_player_states_publish(self,):
