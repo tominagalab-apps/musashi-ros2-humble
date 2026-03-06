@@ -1,180 +1,171 @@
 [Home](../README.md)  
-# basestation（旧コーチボックス）  
-コーチボックス関係のパッケージを配置しているディレクトリです．  
-basestationは以下の二つの画面で構成されている．両方の画面を起動することで試合の状態が可視化される．  
-なお，**両画面を出さない限りRefereeBox->basestation->playerへのコマンド通信がされず試合ができないので注意すること**    
+# basestation（旧コーチボックス）
 
-|Display|Description|  
-|---|---|
-|rviz|rviz上に3Dでフィールドおよびプレイヤーを表示する画面．試合中の状態を可視化する．|  
-|rqt|GUI画面．レフェリーボックスとの通信や，各プレイヤーとの通信を担当する．| 
+## 概要
+**basestationは、RoboCupサッカーロボットの試合を管制するコーチボックス実装です。**
 
-## 実行方法  
-### rviz画面  
-以下をターミナルで実行することで設定済みのrviz2が起動する．
+RoboCup MSL（Middle Size League）の試合管制システムとして機能し、RefereeBoxからのゲームコマンドを受信・解析し、5台のプレイヤーロボットへの指令配信、プレイヤーロボットの状態監視、および試合状況の可視化を統合管理します。
 
+### 主な機能
+- **RefereeBox通信**: TCP/IPによるゲームコマンド受信
+- **ロボット制御**: UDP通信による複数ロボットへの並行制御
+- **状態監視**: ロボット位置・姿勢・ボール保持状態のリアルタイム監視
+- **3D可視化**: RViz2による試合状況のリアルタイム表示
+- **統合管理**: 単一ベースステーションですべての通信・制御を一元化
+
+## システムアーキテクチャ
+
+```
+RefereeBox (TCP)
+    ↓ (Commands)
+    ↓
+RefereeBoxClient ─────┐
+                      │
+                      → ROS2 Topic (/refcmd)
+                      │
+PlayerController  ←───┘
+    ↓ (UDP Commands)
+    ↓
+[Player1][Player2][Player3][Player4][Player5]
+    ↓ (UDP States)
+    ↓
+PlayerServer
+    ↓ (ROS2 Topic /player_states)
+    ↓
+RViz (3D Visualization)
+```
+
+## パッケージ一覧
+
+basestationは以下の4つの専門化パッケージで構成されています：
+
+| パッケージ | 説明 | 役割 | 通信 |
+|-----------|------|------|------|
+| 📡 [musashi_rqt_refereebox_client](./musashi_rqt_refereebox_client/README.md) | RefereeBox通信管理 | RefereeBoxからのコマンド受信・解析 | TCP/IPv4 |
+| 📤 [musashi_rqt_player_controller](./musashi_rqt_player_controller/README.md) | プレイヤーコマンド送信 | ロボットへのコマンド変換・送信 | UDP/IPv4 |
+| 📥 [musashi_rqt_player_server](./musashi_rqt_player_server/README.md) | プレイヤーデータ受信 | ロボット状態データの受信・監視 | UDP/IPv4 |
+| 🎨 [musashi_rviz](./musashi_rviz/README.md) | 3D可視化 | フィールド・ロボット表示・監視 | ROS2 TF |
+
+## 動作構成
+
+basestationは以下の**2つの独立した画面**で構成されており、両方を起動することで試合の管制と可視化の完全な機能が実現されます。
+
+**⚠️ 重要：両画面を同時に起動する必要があります。どちらか一方だけでは、RefereeBox → basestation → Player への通信パイプラインが構築されず、試合が開始できません。**
+
+| Display | パッケージ | 役割 | 説明 |
+|---------|-----------|------|------|
+| **RViz** | musashi_rviz | 可視化 | 3Dフィールドビュー。フィールドとプレイヤーの状態をリアルタイムに可視化 |
+| **rqt GUI** | rqt plugins | 管制 | コントローラー画面。RefereeBox通信、プレイヤー監視、コマンド送信を管理 |
+
+## 実行方法
+
+### ステップ1: RViz画面起動（フィールド可視化）
 ```bash
 ros2 launch musashi_rviz bringup_launch.py
 ```
+フィールドと5台のプレイヤーロボットが表示されるRViz画面が起動します。  
+詳細は [musashi_rviz/README.md](./musashi_rviz/README.md) を参照してください。
 
-[bringup_launch.py](./musashi_rviz/launch/bringup_launch.py) はトップレベルの launch で、
-フィールド表示ノード・RViz を起動し、プレイヤー分の `player_spawn_launch.py` を含む `team_spawn_launch.py` を起動します。
-
-プレイヤー数を変更したい場合は `team_spawn_launch.py` の `player_num` 引数を使います（デフォルトは 5）。例:
-
+### ステップ2: rqt GUI画面起動（コマンド・監視）
 ```bash
-ros2 launch musashi_rviz team_spawn_launch.py player_num:=3
+rqt
+```
+空のrqt GUI画面が起動します。
+
+**プラグインのロード手順:**
+1. **Plugins** メニューをクリック
+2. **Hibikino-Musashi** カテゴリを展開
+3. 以下の3つのプラグインを順番にロード：
+   - **RefereeBoxClient** - RefereeBox通信管理
+   - **PlayerServer** - プレイヤー状態監視
+   - **PlayerController** - プレイヤーコマンド送信
+
+**重要な初期化手順:**
+1. RefereeBoxClient で接続設定を確認
+2. PlayerServer でBind IP・Portを設定後、**Start** ボタンをクリック
+3. チーム情報、プレイヤーIPアドレスを全て確認
+4. その後、RefereeBox から "START" コマンドを送信
+
+## ディレクトリ構成
+```
+basestation/
+├── README.md (このファイル)
+├── musashi_rqt_player_controller/
+│   ├── README.md
+│   ├── scripts/
+│   ├── src/
+│   └── ...
+├── musashi_rqt_player_server/
+│   ├── README.md
+│   ├── scripts/
+│   ├── src/
+│   └── ...
+├── musashi_rqt_refereebox_client/
+│   ├── README.md
+│   ├── scripts/
+│   ├── src/
+│   └── ...
+└── musashi_rviz/
+    ├── README.md
+    ├── launch/
+    ├── config/
+    └── ...
 ```
 
-各プレイヤーのフレームプレフィックスは内部で `player1/`, `player2/` のように設定されます。
-### rqt画面  
-以下をターミナルで実行する．  
-`rqt`  
-空のrqt_gui画面が出るはずなので，左上の"Plugins"から以下の三つのプラグインをロードする．  
-1. Hibikino-Musashiの**RefereeBoxClient**  
-1. Hibikino-Musashiの**PlayerServer**  
-1. Hibikino-Musashiの**PlayerController**  
+## 最近の重要な更新
 
-#### 重要な変更点（最近の更新）
-- `PlayerServer` プラグインに **Start / Stop** ボタンを追加しました。起動時に自動でサーバを立ち上げず、GUI から明示的に開始・停止できます。
-- `PlayerServer` の UI に **Bind IP (Own IP)** と **Port** 入力欄を追加しました。複数インターフェース環境ではここでバインド先を指定してください。
-- `musashi_rviz` の起動引数 `player_num` を導入しました（デフォルトは 5）。RViz 側のプレイヤー数と `PlayerServer` の送受信は一致させてください。
-- RefereeBox クライアントは受信バッファを実装し、NULL 終端（`\0`）でメッセージを区切ってパースするよう改善しました。部分受信や複数メッセージの連結に対して堅牢になっています。
+### RefereeBoxClient (musashi_rqt_refereebox_client)
+- TCP通信の堅牢化：NULL終端文字対応で部分受信や複数メッセージ連結に対応
+- JSON形式コマンド解析の実装完了
 
-これらにより、運用時に以下を意識してください：
-- `PlayerServer` を使う場合はまず GUI 上で `Start` を押してからプレイヤーとの通信を開始してください。
-- RefereeBox サーバはメッセージ末尾に `\0` を付与して送信する想定です（互換性のためクライアント側は `\0` を許容します）。
+### PlayerServer (musashi_rqt_player_server)
+- GUI上で明示的な **Start / Stop** ボタンが追加
+- **Bind IP** と **Port** 入力欄で複数ネットワークインターフェース対応が可能に
+- UDP受信バッファの堅牢化
 
-## ディレクトリ構成  
-<pre>
-basestation
-├── README.md
-├── musashi_rqt_player_controller
-├── musashi_rqt_player_server
-├── musashi_rqt_refereebox_client
-└── musashi_rviz
-</pre>
+### PlayerController (musashi_rqt_player_controller)
+- RefereeBoxコマンドからPlayer形式への変換処理実装
+- ロボット個別制御コマンドサポート
 
-## パッケージリスト  
-|Package name|Description|
-|---|---|
-|musashi_rqt_player_controller|各プレイヤーへのデータ送信を行うパッケージ．rqtプラグインとして開発している|
-|musashi_rqt_player_server|各プレイヤーからのデータ受信を行うパッケージ．rqtプラグインとして開発している|  
-|musashi_rqt_refereebox_client|レフェリーボックスと通信を行うパッケージ．rqtプラグインとして開発している|  
-|musashi_rviz|試合の状態を確認するrviz画面を構成するためのパッケージ|
+### musashi_rviz
+- `player_num` 起動引数でプレイヤー数を動的に設定可能（デフォルト5）
+- TFフレーム階層の整理・標準化
 
-## RefereeBoxとCoachBox間通信について
-RefereeBoxとはTCPで送受信を行います．
-### RefereeBox→basestation
-レフェリーボックスからはゲームコマンドが送られてきます．  
-#### コマンドフォーマット詳細  
-- RefereeBoxからはJSON形式の文字列データがバイナリデータで送られてくる．  
-- JSON形式は次のようになる    
-```
-{
-  command: {コマンド文字列}
-  targetTeam: {ターゲットチーム文字列}
-}
-```
-- 上記の文字列の末尾には終端を表す'\0'がつけられて送られてきます．
-- {コマンド文字列}には"WELCOME"や"START"などの文字列が入ります．  
-- {ターゲットチーム文字列}には"224.16.32.*"で各チームに割り振られているIPアドレスの文字列データが入ります．あるいは __空（""）__ の場合があります． 
-  - 空（""）の場合は試合中の両チーム宛に送っていることを意味するコマンドになります．  
-  （例）commandが"START"や"DROP_BALL"ではtargetTeamは空です．  
-  - ターゲットチーム文字列（"224.16.32.*"）が入っている場合は，そのチームにするコマンドになります．  
-  （例）commandが"KICKOFF"で，targetTeamが"224.16.32.44"の場合は，チームHibikino-Musashiがキックオフであることを意味するので，自チームのキックオフポジションに移動し，"START"コマンドを待機する必要がある． 
+## 運用時のベストプラクティス
 
-#### コマンド文字列一覧  
-レフェリーボックスからは以下のコマンド文字列が送られてきます．  
-|command|targetTeam|  
-|-------|----------|  
-|"START"|""|  
-|"STOP"|""|  
-|"DROP_BALL"|""|  
-|"HALF_TIME"|""|  
-|"END_GAME"|""|  
-|"GAME_OVER"|""|  
-|"PARK"|""|  
-|"FIRST_HALF"|""|  
-|"SECOND_HALF"|""|  
-|"FIRST_HALF_OVERTIME"|""|
-|"SECOND_HALF_OVERTIME"|""|
-|"RESET"|""|
-|"WELCOME"|"224.16.32.*"|
-|"KICKOFF"|"224.16.32.*"|
-|"FREEKICK"|"224.16.32.*"|
-|"GOALKICK"|"224.16.32.*"|
-|"THROWIN"|"224.16.32.*"|
-|"CORNER"|"224.16.32.*"|
-|"PENALTY"|"224.16.32.*"|
-|"GOAL"|"224.16.32.*"|
-|"REPAIR"|"224.16.32.*"|
-|"YELLOW_CARD"|"224.16.32.*"|
-|"DOUBLE_YELLO"W|"224.16.32.*"|
-|"RED_CARD"|"224.16.32.*"|
-|"SUBSTITUTION"|"224.16.32.*"|
-|"IS_ALIVE"|"224.16.32.*"|
+### 起動順序
+1. **RViz** を先に起動
+2. その後 **rqt** を起動
+3. rqtプラグインを順番にロード
 
-### basestation→RefereeBox
-basestationはRefereeBoxに所定のjson形式のログファイルを周期的に送信しなければならない．  
-送信時における通信仕様の詳細は[MSL_WMDataStruct](https://msl.robocup.org/wp-content/uploads/2018/08/MSL_WMDataStruct.pdf)を参照すること．  
-#### 送信データの概要
-以下のデータを指定のjson形式で送る必要がある.  
-- 全ロボットのデータ 
-  - ID（1~5の整数）
-  - 現在姿勢（x[m], y[m], theta[rad]）
-  - 目標姿勢（x[m], y[m], theta[rad]）
-  - バッテリー残量[%]
-  - ボール保持（0:未保持, 1:保持）
-- ボールのデータ
-  - ワールド座標系におけるボール位置（x[m], y[m], z[m]）
-  - 
+### ネットワーク設定確認
+- RefereeBox PC のIPアドレス・ポート番号を確認
+- basestation のNetwork Interface を確認
+- 全プレイヤーロボットのIPアドレス設定確認
+- ネットワーク接続性を `ping` で事前確認
 
-## CoachBoxとPlayer間の通信について  
-CoachBoxとPlayerはUDPで通信を行っています．  
-- 具体的な通信処理については"musashi_player/communication/communication.cpp"を参照してください．  
-  - UDPの受信処理については"recv"関数で行われています．  
-  - UDPの送信処理については"send"関数で行われています．  
-### CoachBox→Playerへの通信  
-CoachBoxはRefereeBoxから送られてきたコマンドに基づいて，各プレイヤーへコマンドを送信します．  
-この時，Hibikino-Musashi内で取り決められたコマンドフォーマットに変換して送る必要があります．  
-#### 通信フォーマット  
-...
-### Player→CoachBoxへの通信  
-各プレイヤーからは各プレイヤーの状態データが格納された文字列データが送られてくる．  
-（※バイナリデータになっていないことに注意）  
-#### 通信フォーマット　　
-カンマ（","）区切りで以下の順に整数文字が入った文字列で送られてくる  
+### 通信開始手順
+1. RefereeBoxClient: 接続状態を確認
+2. PlayerServer: **Start** ボタンで受信開始
+3. 全プレイヤーのオンライン状態を確認
+4. RefereeBox から試合開始コマンド("START")を送信
 
-|index|value|detail|
-|-----|-----|-----| 
-|1|color|チームカラー．CYANなら0，MAGENTAなら1|
-|2|id|ロボットのID|
-|3|action|ロボットのアクション（Action名前空間の定数値）|
-|4|state|ロボットのステート（State名前空間の定数値）|
-|5|ball.distance|ボールとの直線距離|
-|6|ball.angle|ボールの角度|
-|7|goal.distance|ゴールとの直線距離|
-|8|goal.angle|ゴールの角度|
-|9|myGoal.distance|自身のゴールとの直線距離|
-|10|myGoal.angle|自身のゴールの角度|
-|11|position.x|自己位置x座標|
-|12|position.y|自己位置y座標|
-|13|position.angle|姿勢θ|
-|14|role|ロボットのロール（Role名前空間の定数値）|
-|15|haveBall|ボール保持の有無|
-|16|moveto_position.x|ロボットの目標x座標|
-|17|moveto_position.y|ロボットの目標y座標|
-|18|moveto_position.angle|ロボットの目標姿勢θ|
-|19|obstacle.distance|障害物までの直線距離|
-|20|obstacle.angle|障害物の角度|
+### トラブルシューティング
 
-コーチボックス側では，受信後に”,”でsplitして文字列から整数値への変換が必要になる．  
-一つの変数が何文字なのかは","でsplitするまでわからない．  
-__いずれバイナリデータで送受信する方法に修正し通信速度の高速化を図る必要がある__  
+**ロボットが通信してこない場合:**
+- PlayerServer のインターフェース設定（Bind IP）を確認
+- ファイアウォール設定を確認
+- プレイヤーロボット側のネットワーク設定を確認
 
-## 実装したい機能  
-- キッカー差動ボタン  
-- コンパス校正開始ボタン  
-- パーティクル再配布ボタン  
-- RoleとColorの可視化   
+**RefereeBox から通信が来ない場合:**
+- RefereeBoxClient の接続設定（IP・ポート）を確認
+- RefereeBox サーバーが起動しているか確認
+- NULL終端文字（`\0`）がメッセージ末尾に付与されているか確認
+
+## 通信仕様リファレンス
+
+- [RefereeBox通信](./musashi_rqt_refereebox_client/README.md#refereboxとの通信仕様)
+- [Player通信（受信）](./musashi_rqt_player_server/README.md#player--basestation間の通信仕様)
+- [Player通信（送信）](./musashi_rqt_player_controller/README.md#basestation--player間の通信仕様)
+
+
