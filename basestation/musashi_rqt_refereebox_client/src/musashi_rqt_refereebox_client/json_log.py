@@ -1,7 +1,6 @@
 from datetime import datetime, timezone
 import math
 import numpy as np
-from scipy.spatial.transform import Rotation
 import json
 
 # ------------------------------
@@ -47,8 +46,24 @@ def transform_to_world(x, y, z, qx, qy, qz, qw):
     p = np.dot(M, _p)  # M.p
 
     # 姿勢角の変換
-    r = Rotation.from_quat([qx, qy, qz, qw])
-    _r = r.as_euler('xyz', degrees=False)
+    # scipy.spatial.transform.Rotation を使用せず、numpyのみで実装
+    # クォータニオンからオイラー角への変換
+    # qx, qy, qz, qw -> roll, pitch, yaw
+    sinr_cosp = 2 * (qw * qx + qy * qz)
+    cosr_cosp = 1 - 2 * (qx * qx + qy * qy)
+    roll = math.atan2(sinr_cosp, cosr_cosp)
+
+    sinp = 2 * (qw * qy - qz * qx)
+    if abs(sinp) >= 1:
+        pitch = math.copysign(math.pi / 2, sinp)  # use 90 degrees if out of range
+    else:
+        pitch = math.asin(sinp)
+
+    siny_cosp = 2 * (qw * qz + qx * qy)
+    cosy_cosp = 1 - 2 * (qy * qy + qz * qz)
+    yaw = math.atan2(siny_cosp, cosy_cosp)
+
+    _r = np.array([roll, pitch, yaw])
     _th = _r[2]  # z軸周りの角度[rad]
     th = _th - 2.0*math.pi  # 変換
 

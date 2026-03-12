@@ -6,29 +6,34 @@ import os
 
 
 def generate_launch_description():
-    # rqt設定ファイルのパス
-    cfg_path = os.path.join(
-        get_package_share_directory('musashi_basestation'),
-        'config',
-        'rqt_basestation_plugins.rqt'
-    )
-
-    # musashi_rvizのbringup_launch.pyのパス
-    rviz_bringup_launch_path = os.path.join(
-        get_package_share_directory('musashi_rviz'),
-        'launch',
-        'bringup_launch.py'
-    )
-
+    
     return LaunchDescription([
-        # RViz (フィールド可視化) を起動
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(rviz_bringup_launch_path)
+        # RefereeBoxClient を別ウィンドウで起動
+        ExecuteProcess(
+            cmd=['rqt', '-s', 'musashi_rqt_refereebox_client.rqt_refereebox_client.RqtRefereeBoxClient'],
+            output='screen'
         ),
 
-        # rqt (コマンド・監視) を起動
+        # PlayerServer を別ウィンドウで起動
         ExecuteProcess(
-            cmd=['rqt', '--load-config', cfg_path],
-            output='screen'
+           cmd=['rqt', '-s', 'musashi_rqt_player_server.rqt_player_server.RqtPlayerServer'],
+           output='screen'
+       ), 
+       
+       # PlayerController を別ウィンドウで起動
+        ExecuteProcess(
+           cmd=['rqt', '-s', 'musashi_rqt_player_controller.rqt_player_controller.RqtPlayerController'],
+           output='screen'
+       ),
+        
+        # フィールド，プレイヤー可視化用rvizの起動
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                os.path.join(
+                    get_package_share_directory('musashi_rviz'),
+                    'launch',
+                    'bringup_launch.py'
+                )
+            )
         )
     ])

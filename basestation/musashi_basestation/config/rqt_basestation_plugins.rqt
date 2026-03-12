@@ -1,12 +1,41 @@
-<?xml version="1.0"?>
-<config version="1">
-  <!--
-    このファイルを rqt --load-config で読み込むと
-    以下のプラグインが自動的に有効化されます。
-    位置やパネルレイアウトなどは rqt で保存された状態に
-    応じて変化するため、必要に応じて GUI から編集して下さい。
-  -->
-  <plugin name="musashi_rqt_refereebox_client/RefereeBoxClient" enabled="true"/>
-  <plugin name="musashi_rqt_player_server/PlayerServer" enabled="true"/>
-  <plugin name="musashi_rqt_player_controller/PlayerController" enabled="true"/>
-</config>
+{
+  "dockarea": {
+    "dock_widget_main": {
+      "tabs": [
+        {
+          "current_tab_index": 0,
+          "dockable_widget_tabs": [
+            {
+              "dock_widget": "musashi_rqt_refereebox_client/RefereeBoxClient",
+              "image_raw": null,
+              "plugin_name": "RefereeBoxClient"
+            },
+            {
+              "dock_widget": "musashi_rqt_player_server/PlayerServer",
+              "image_raw": null,
+              "plugin_name": "PlayerServer"
+            },
+            {
+              "dock_widget": "musashi_rqt_player_controller/PlayerController",
+              "image_raw": null,
+              "plugin_name": "PlayerController"
+            }
+          ],
+          "parent_tab_bar_top_level_index": 0,
+          "parent_tab_bar_width": 300,
+          "tab_bar_index": 0
+        }
+      ],
+      "splitter_index": 0,
+      "splitter_orientation": 1,
+      "splitter_sizes": [
+        600,
+        300
+      ]
+    }
+  },
+  "fullscreen": false,
+  "geometry": "AdnQywADAAAAAABUAAAAHQAABL8AAAZ1AAAAVQAAABoAAAS+AAAGdAAAAAAAAAAA",
+  "state": "AAAA/wAAAAD9AAAAAwAAAAAAAADhAAAC/fwBAAAAA/sAAAAUAG0AYQBpAG4AVAB3AGkAbgBkAG8AdwAAAAAA/////wAAAABW+wAAAA=",
+  "windowTitle": "rqt - Musashi Basestation"
+}
