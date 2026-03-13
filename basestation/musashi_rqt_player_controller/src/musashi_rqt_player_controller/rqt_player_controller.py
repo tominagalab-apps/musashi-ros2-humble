@@ -7,7 +7,7 @@ import os
 
 
 from musashi_msgs.msg import PlayerStates
-from musashi_basestation.common.constants import MAGENTA, CYAN, ALPHA, BETA, GAMMA, DELTA, GOALIE
+from musashi_basestation.common.constants import MAGENTA, CYAN, ALPHA, BETA, GAMMA, DELTA, GOALIE  # 共通定数（チームカラー・役割）をmusashi_basestationで一元管理
 
 PKG_NAME = 'musashi_rqt_player_controller'
 UI_FILE_NAME = 'player_controller.ui'

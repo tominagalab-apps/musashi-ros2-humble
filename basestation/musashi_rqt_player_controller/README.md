@@ -181,3 +181,11 @@ musashi_rqt_player_controller/
 - `python_qt_binding`: Qtバインディング
 - `rqt_gui`: rqt GUIフレームワーク
 - `musashi_msgs`: カスタムメッセージ定義
+
+## 共通定数の一元管理
+
+チームカラーや役割（MAGENTA, CYAN, ALPHA, BETA, GAMMA, DELTA, GOALIE など）の定数は、
+`musashi_basestation/common/constants.py` にて一元管理されています。
+本パッケージでも `from musashi_basestation.common.constants import ...` で参照しています。
+
+- 2026年3月：定数の共通化・一元管理を実施

@@ -8,7 +8,7 @@ from python_qt_binding.QtCore import QTimer, Slot
 
 
 from musashi_rqt_player_server.player_server import PlayerServer
-from musashi_basestation.common.constants import MAGENTA, CYAN, ALPHA, BETA, GAMMA, DELTA, GOALIE
+from musashi_basestation.common.constants import MAGENTA, CYAN, ALPHA, BETA, GAMMA, DELTA, GOALIE  # 共通定数（チームカラー・役割）をmusashi_basestationで一元管理
 
 from geometry_msgs.msg import TransformStamped
 from musashi_msgs.msg import RefereeCmd

@@ -394,3 +394,11 @@ TODO（package.xmlのライセンス項目を参照）
 ---
 
 **参考**: 詳細な操作手順は [basestation/README.md](../README.md) を参照してください。
+
+## 共通定数の一元管理
+
+チームカラーや役割（MAGENTA, CYAN, ALPHA, BETA, GAMMA, DELTA, GOALIE など）の定数は、
+`musashi_basestation/src/musashi_basestation/common/constants.py` にて一元管理しています。
+他のbasestation配下パッケージからも `from musashi_basestation.common.constants import ...` で参照できます。
+
+- 2026年3月：定数の共通化・一元管理を実施

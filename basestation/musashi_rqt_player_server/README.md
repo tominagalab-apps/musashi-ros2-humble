@@ -229,3 +229,11 @@ musashi_rqt_player_server/
 ## 最近の更新
 - **PlayerServer**: GUI上で明示的な **Start / Stop** ボタンを追加
 - **PlayerServer**: **Bind IP** と **Port** 入力欄で複数インターフェース対応が可能に
+
+## 共通定数の一元管理
+
+チームカラーや役割（MAGENTA, CYAN, ALPHA, BETA, GAMMA, DELTA, GOALIE など）の定数は、
+`musashi_basestation/common/constants.py` にて一元管理されています。
+本パッケージでも `from musashi_basestation.common.constants import ...` で参照しています。
+
+- 2026年3月：定数の共通化・一元管理を実施
