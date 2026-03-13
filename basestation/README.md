@@ -114,7 +114,7 @@ basestation/
 │   ├── src/
 │   │   └── musashi_rqt_refereebox_client/
 │   │       ├── __init__.py
-│   │       ├── rqt_refereebox_client.py (rqt プラグイン本体)
+│   │       ├── rqt_refereebox_plugin.py (rqt プラグイン本体)
 │   │       ├── refbox_client.py (TCP 通信実装)
 │   │       └── json_log.py (コマンドログ)
 │   └── test/ (著作権・PEP8 チェック)
