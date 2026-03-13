@@ -1,4 +1,6 @@
 from setuptools import find_packages, setup
+import os
+from glob import glob
 
 package_name = 'musashi_rqt_refereebox_client'
 
@@ -13,7 +15,8 @@ setup(
         ('share/' + package_name + '/resource', ['resource/refereebox_client.ui']),
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name, ['plugin.xml']),
-        ('lib/' + package_name, ['scripts/refereebox_client'])
+        ('lib/' + package_name, ['scripts/refereebox_client']),
+        ('share/' + package_name + '/launch', glob('launch/*.py')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,

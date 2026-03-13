@@ -417,4 +417,29 @@ tail -f ~/ros_ws/log/*.log    # ロボット側 ROS ログ確認
 
 - [RoboCup MSL 公式ルール](https://robocupssl.github.io/ssl-rules/)
 - [ROS2 Humble 公式ドキュメント](https://docs.ros.org/en/humble/)
-- Hibikino-Musashi チーム Wiki (内部）
+- Hibikino-Musashi チーム Wiki (内部)
+
+## テスト用RefereeBoxサーバ（dummy_refbox_server.py）の使い方
+
+rqt_refereebox_clientアプリの動作確認やデバッグ用に、TCP通信を模擬するダミーサーバを用意しています。
+
+### 使い方
+1. サーバ起動
+
+```sh
+cd basestation/musashi_rqt_refereebox_client/test
+python3 dummy_refbox_server.py
+```
+
+2. クライアント（rqt_refereebox_client等）から接続
+   - サーバ側で「Client connected from ...」と表示されれば接続成功
+
+3. 任意のタイミングでJSONコマンド送信
+   - サーバ側CUIで以下のように入力
+   ```
+   {"command": "START", "targetTeam": "CYAN"}
+   ```
+   - 入力したJSONがそのままクライアントへ送信されます
+   - 'exit' と入力するとサーバを終了します
+
+4. クライアントからの受信データもサーバ側に表示されます
