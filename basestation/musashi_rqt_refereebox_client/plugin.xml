@@ -1,5 +1,5 @@
 <library path="src">
-  <class name="RqtRefereeBoxClient" type="musashi_rqt_refereebox_client.rqt_refereebox_client.RqtRefereeBoxClient" base_class_type="rqt_gui_py::Plugin">
+  <class name="RqtRefereeBoxClient" type="musashi_rqt_refereebox_client.rqt_refereebox_plugin.RqtRefereeBoxClient" base_class_type="rqt_gui_py::Plugin">
     <description>
       RefereeBox client GUI for communicate with referee box
     </description>

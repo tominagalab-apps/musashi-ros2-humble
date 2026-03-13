@@ -4,8 +4,8 @@ import os
 from ament_index_python.resources import get_resource
 from python_qt_binding import loadUi
 from qt_gui.plugin import Plugin
-from python_qt_binding.QtWidgets import QWidget, QErrorMessage
-from python_qt_binding.QtCore import QTimer
+from python_qt_binding.QtWidgets import QWidget, QErrorMessage, QApplication
+from python_qt_binding.QtCore import QTimer, Qt
 
 from musashi_rqt_refereebox_client.refbox_client import RefBoxClient
 from musashi_rqt_refereebox_client.ros_interface import RosInterface
@@ -14,7 +14,6 @@ PKG_NAME = 'musashi_rqt_refereebox_client'
 UI_FILE_NAME = 'refereebox_client.ui'
 GUI_UPDATE_PERIOD = 0.033  # GUI update period [s]
 PERIOD = 0.25  # Timer callback period [s]
-
 
 class RqtRefereeBoxClient(Plugin):
     def __init__(self, context):
@@ -53,8 +52,6 @@ class RqtRefereeBoxClient(Plugin):
         """Connect Qt signals to their respective slots."""
         self._widget.chckConnect.stateChanged.connect(self.onStateChangedChckConnect)
 
-    # create_publishersはros_interface.pyに移行したため不要
-    # create_subscribersはros_interface.pyに移行したため不要
     def start_ui_thread(self):
         """Start a QTimer to periodically update the Qt UI widgets."""
         self._timer = QTimer()
@@ -65,7 +62,6 @@ class RqtRefereeBoxClient(Plugin):
         """Clean up resources and safely disconnect RefBoxClient on shutdown."""
         self._timer.stop()
         self.disconnect_refbox()
-
 
     def timer_callback(self):
         """Periodically send player_states to RefBox if connected."""
@@ -86,22 +82,26 @@ class RqtRefereeBoxClient(Plugin):
 
     def connect_refbox(self):
         """Attempt to connect to the RefereeBox and set up callbacks."""
-        self._refbox_client = RefBoxClient()
-        refboxIP = self._widget.lnedtIP.text()
-        refboxPort = int(self._widget.lnedtPort.text())
-        self._node.get_logger().info(f'Try to connect to RefereeBox [{refboxIP}:{refboxPort}] ...')
-        isConnect = self._refbox_client.connect(refboxIP, refboxPort)
-        if isConnect:
-            self._node.get_logger().info('Successfully connected to RefereeBox')
-            self._refbox_client.recievedCommand.connect(self.onRecievedCommand)
-            self._refbox_client.start()
-            self.is_connected_refbox = True
-        else:
-            self._node.get_logger().error('Failed to connect to RefereeBox')
-            dlg = QErrorMessage(self._widget)
-            dlg.showMessage('Failed to connect to RefereeBox. Please check network connection status.')
-            self._widget.chckConnect.setCheckState(False)
-            self.disconnect_refbox()
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            self._refbox_client = RefBoxClient()
+            refboxIP = self._widget.lnedtIP.text()
+            refboxPort = int(self._widget.lnedtPort.text())
+            self._node.get_logger().info(f'Try to connect to RefereeBox [{refboxIP}:{refboxPort}] ...')
+            isConnect = self._refbox_client.connect(refboxIP, refboxPort)
+            if isConnect:
+                self._node.get_logger().info('Successfully connected to RefereeBox')
+                self._refbox_client.recievedCommand.connect(self.onRecievedCommand)
+                self._refbox_client.start()
+                self.is_connected_refbox = True
+            else:
+                self._node.get_logger().error('Failed to connect to RefereeBox')
+                dlg = QErrorMessage(self._widget)
+                dlg.showMessage('Failed to connect to RefereeBox. Please check network connection status.')
+                self._widget.chckConnect.setCheckState(False)
+                self.disconnect_refbox()
+        finally:
+            QApplication.restoreOverrideCursor()
 
     def disconnect_refbox(self):
         """Safely disconnect from the RefereeBox and clean up client instance."""
@@ -118,7 +118,17 @@ class RqtRefereeBoxClient(Plugin):
     def onRecievedCommand(self, recv, command, targetTeam):
         """Handle command received from RefereeBox and publish as RefereeCmd message."""
         self._node.get_logger().info(f'Recieved: command={command}, targetTeam={targetTeam}')
-        self._widget.txtRecv.setText(recv.decode('utf-8'))
+        # Update the structured display
+        self._widget.lblCommand.setText(command)
+        self._widget.lblTargetTeam.setText(targetTeam if targetTeam else "All Teams")
+        # Display the full JSON in the text browser with pretty formatting
+        try:
+            import json
+            json_data = json.loads(recv.decode('utf-8'))
+            pretty_json = json.dumps(json_data, indent=2, ensure_ascii=False)
+            self._widget.txtRecv.setText(pretty_json)
+        except json.JSONDecodeError:
+            self._widget.txtRecv.setText(recv.decode('utf-8'))
         # ROS2インターフェース経由でRefereeCmdをpublish
         self.ros.publish_refcmd(command, targetTeam)
 
