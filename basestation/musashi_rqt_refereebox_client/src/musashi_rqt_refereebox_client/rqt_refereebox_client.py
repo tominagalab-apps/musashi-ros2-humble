@@ -1,0 +1,135 @@
+
+
+import os
+from ament_index_python.resources import get_resource
+from python_qt_binding import loadUi
+from qt_gui.plugin import Plugin
+from python_qt_binding.QtWidgets import QWidget, QErrorMessage
+from python_qt_binding.QtCore import QTimer
+
+from musashi_rqt_refereebox_client.refbox_client import RefBoxClient
+from musashi_rqt_refereebox_client.ros_interface import RosInterface
+
+PKG_NAME = 'musashi_rqt_refereebox_client'
+UI_FILE_NAME = 'refereebox_client.ui'
+GUI_UPDATE_PERIOD = 0.033  # GUI update period [s]
+PERIOD = 0.25  # Timer callback period [s]
+
+
+class RqtRefereeBoxClient(Plugin):
+    def __init__(self, context):
+        """Initialize the rqt plugin, UI, and integrate TCP/ROS2 modules."""
+        super().__init__(context)
+        self.setObjectName('RqtRefereeBoxClient')
+        self._context = context
+        self._node = context.node
+        self.is_connected_refbox = False
+        self._refbox_client = None
+        self.player_states = None
+
+        self.create_ui()
+        self.connect_signals_slots()
+        # ROS2通信インターフェースを生成
+        self.ros = RosInterface(self._node, player_states_callback=self.player_states_callback)
+        self._node.timer = self._node.create_timer(PERIOD, self.timer_callback)
+        self.start_ui_thread()
+
+    def create_ui(self):
+        """Load and set up the Qt UI from .ui file, and display host IP."""
+        self._widget = QWidget()
+        _, package_path = get_resource('packages', PKG_NAME)
+        ui_file = os.path.join(package_path, 'share', PKG_NAME, 'resource', UI_FILE_NAME)
+        loadUi(ui_file, self._widget)
+        if self._context.serial_number() > 1:
+            self._widget.setWindowTitle(self._widget.windowTitle() + f' ({self._context.serial_number()})')
+        self._context.add_widget(self._widget)
+        try:
+            host_ip = RefBoxClient().getHostIP()
+        except Exception:
+            host_ip = '127.0.0.1'
+        self._widget.lblOwnIP.setText(host_ip)
+
+    def connect_signals_slots(self):
+        """Connect Qt signals to their respective slots."""
+        self._widget.chckConnect.stateChanged.connect(self.onStateChangedChckConnect)
+
+    # create_publishersはros_interface.pyに移行したため不要
+    # create_subscribersはros_interface.pyに移行したため不要
+    def start_ui_thread(self):
+        """Start a QTimer to periodically update the Qt UI widgets."""
+        self._timer = QTimer()
+        self._timer.timeout.connect(self._widget.update)
+        self._timer.start(int(GUI_UPDATE_PERIOD * 1000.0))
+
+    def shutdown_plugin(self):
+        """Clean up resources and safely disconnect RefBoxClient on shutdown."""
+        self._timer.stop()
+        self.disconnect_refbox()
+
+
+    def timer_callback(self):
+        """Periodically send player_states to RefBox if connected."""
+        if self.is_connected_refbox and self.player_states is not None:
+            try:
+                self._refbox_client.send_jsonlog(self.player_states)
+            except Exception as e:
+                self._node.get_logger().error(f'Failed to send json log: {e}')
+
+
+    def onStateChangedChckConnect(self, state):
+        """Handle connect/disconnect checkbox state change."""
+        if state:
+            self.connect_refbox()
+        else:
+            self.disconnect_refbox()
+
+
+    def connect_refbox(self):
+        """Attempt to connect to the RefereeBox and set up callbacks."""
+        self._refbox_client = RefBoxClient()
+        refboxIP = self._widget.lnedtIP.text()
+        refboxPort = int(self._widget.lnedtPort.text())
+        self._node.get_logger().info(f'Try to connect to RefereeBox [{refboxIP}:{refboxPort}] ...')
+        isConnect = self._refbox_client.connect(refboxIP, refboxPort)
+        if isConnect:
+            self._node.get_logger().info('Successfully connected to RefereeBox')
+            self._refbox_client.recievedCommand.connect(self.onRecievedCommand)
+            self._refbox_client.start()
+            self.is_connected_refbox = True
+        else:
+            self._node.get_logger().error('Failed to connect to RefereeBox')
+            dlg = QErrorMessage(self._widget)
+            dlg.showMessage('Failed to connect to RefereeBox. Please check network connection status.')
+            self._widget.chckConnect.setCheckState(False)
+            self.disconnect_refbox()
+
+    def disconnect_refbox(self):
+        """Safely disconnect from the RefereeBox and clean up client instance."""
+        try:
+            if self._refbox_client is not None:
+                self._refbox_client.disconnect()
+        except Exception:
+            self._node.get_logger().error('Error during disconnect of RefBoxClient')
+        finally:
+            self._refbox_client = None
+            self.is_connected_refbox = False
+
+
+    def onRecievedCommand(self, recv, command, targetTeam):
+        """Handle command received from RefereeBox and publish as RefereeCmd message."""
+        self._node.get_logger().info(f'Recieved: command={command}, targetTeam={targetTeam}')
+        self._widget.txtRecv.setText(recv.decode('utf-8'))
+        # ROS2インターフェース経由でRefereeCmdをpublish
+        self.ros.publish_refcmd(command, targetTeam)
+
+    def player_states_callback(self, player_states):
+        """Store the latest PlayerStates message for periodic sending to RefBox."""
+        self.player_states = player_states
+
+    def save_settings(self, plugin_settings, instance_settings):
+        """Save plugin settings (not used)."""
+        pass
+
+    def restore_settings(self, plugin_settings, instance_settings):
+        """Restore plugin settings (not used)."""
+        pass

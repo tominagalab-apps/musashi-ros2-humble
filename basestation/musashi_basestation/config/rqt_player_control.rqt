@@ -1,0 +1,22 @@
+{
+  "dockarea": {
+    "dock_widget_main": {
+      "tabs": [
+        {
+          "current_tab_index": 0,
+          "dockable_widget_tabs": [
+            {
+              "dock_widget": "musashi_rqt_player_server/PlayerServer",
+              "plugin_name": "PlayerServer"
+            },
+            {
+              "dock_widget": "musashi_rqt_player_controller/PlayerController",
+              "plugin_name": "PlayerController"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "windowTitle": "rqt - Player Control"
+}

@@ -1,0 +1,41 @@
+{
+  "dockarea": {
+    "dock_widget_main": {
+      "tabs": [
+        {
+          "current_tab_index": 0,
+          "dockable_widget_tabs": [
+            {
+              "dock_widget": "musashi_rqt_refereebox_client/RefereeBoxClient",
+              "image_raw": null,
+              "plugin_name": "RefereeBoxClient"
+            },
+            {
+              "dock_widget": "musashi_rqt_player_server/PlayerServer",
+              "image_raw": null,
+              "plugin_name": "PlayerServer"
+            },
+            {
+              "dock_widget": "musashi_rqt_player_controller/PlayerController",
+              "image_raw": null,
+              "plugin_name": "PlayerController"
+            }
+          ],
+          "parent_tab_bar_top_level_index": 0,
+          "parent_tab_bar_width": 300,
+          "tab_bar_index": 0
+        }
+      ],
+      "splitter_index": 0,
+      "splitter_orientation": 1,
+      "splitter_sizes": [
+        600,
+        300
+      ]
+    }
+  },
+  "fullscreen": false,
+  "geometry": "AdnQywADAAAAAABUAAAAHQAABL8AAAZ1AAAAVQAAABoAAAS+AAAGdAAAAAAAAAAA",
+  "state": "AAAA/wAAAAD9AAAAAwAAAAAAAADhAAAC/fwBAAAAA/sAAAAUAG0AYQBpAG4AVAB3AGkAbgBkAG8AdwAAAAAA/////wAAAABW+wAAAA=",
+  "windowTitle": "rqt - Musashi Basestation"
+}
