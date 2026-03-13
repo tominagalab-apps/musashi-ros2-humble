@@ -5,21 +5,16 @@ from python_qt_binding.QtWidgets import QWidget, QHBoxLayout
 from python_qt_binding.QtCore import QTimer, Slot
 import os
 
+
 from musashi_msgs.msg import PlayerStates
+from musashi_basestation.common.constants import MAGENTA, CYAN, ALPHA, BETA, GAMMA, DELTA, GOALIE
 
 PKG_NAME = 'musashi_rqt_player_controller'
 UI_FILE_NAME = 'player_controller.ui'
 
 PLAYER_NUM = 5
 
-MAGENTA = 0
-CYAN = 1
 
-ALPHA = 1
-BETA = 2
-GAMMA = 3
-DELTA = 4
-GOALIE = 5
 
 class RqtPlayerController(Plugin):
     def __init__(self, context):

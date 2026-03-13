@@ -6,7 +6,9 @@ from python_qt_binding.QtWidgets import QWidget
 from qt_gui.plugin import Plugin
 from python_qt_binding.QtCore import QTimer, Slot
 
+
 from musashi_rqt_player_server.player_server import PlayerServer
+from musashi_basestation.common.constants import MAGENTA, CYAN, ALPHA, BETA, GAMMA, DELTA, GOALIE
 
 from geometry_msgs.msg import TransformStamped
 from musashi_msgs.msg import RefereeCmd
@@ -22,16 +24,8 @@ RATE_PLAYER_STATES_PUBLISH = 0.1  # player_statsのパブリッシュ周期[s]
 RATE_TF_BROADCAST = 0.1  # 各プレイヤーのtfのブロードキャスト周期[s]
 RATE_SEND_TO_PLAYERS = 0.1  # 各playerへのコマンド送信周期[s]
 
-MAGENTA = 0
-CYAN = 1
 
 TEAM_COLOR = CYAN  # チームのカラーを設定する
-
-ALPHA = 1
-BETA = 2
-GAMMA = 3
-DELTA = 4
-GOALIE = 5
 
 ROLE_ASSIGN_METHOD = 0  # 0:static, 1:by distance between ball
 
