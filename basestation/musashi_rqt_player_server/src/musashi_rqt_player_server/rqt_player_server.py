@@ -313,6 +313,9 @@ class RqtPlayerServer(Plugin):
         ]
 
         for i, player in enumerate(self._player_states.players):
+            if i >= NUM_PLAYERS:
+                break
+            
             trs[i].header.stamp = now
             trs[i].header.frame_id = 'world'
             trs[i].child_frame_id = 'player' + str(i + 1) + '/base_link'

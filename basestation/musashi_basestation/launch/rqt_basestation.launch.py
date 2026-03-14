@@ -10,7 +10,7 @@ def generate_launch_description():
     return LaunchDescription([
         # RefereeBoxClient を別ウィンドウで起動
         ExecuteProcess(
-            cmd=['rqt', '-s', 'musashi_rqt_refereebox_client.rqt_refereebox_client.RqtRefereeBoxClient'],
+            cmd=['rqt', '-s', 'musashi_rqt_refereebox_client.rqt_refereebox_plugin.RqtRefereeBoxClient'],
             output='screen'
         ),
 
