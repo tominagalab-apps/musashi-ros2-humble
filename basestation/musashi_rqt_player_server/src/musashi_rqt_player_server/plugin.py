@@ -22,16 +22,16 @@ import tf2_ros
 PKG_NAME = 'musashi_rqt_player_server'
 UI_FILE_NAME = 'player_server.ui'
 
-RATE_PLAYER_STATES_PUBLISH = 0.1  # player_statsのパブリッシュ周期[s]
-RATE_TF_BROADCAST = 0.1  # 各プレイヤーのtfのブロードキャスト周期[s]
-RATE_SEND_TO_PLAYERS = 0.1  # 各playerへのコマンド送信周期[s]
-
-
-TEAM_COLOR = CYAN  # チームのカラーを設定する
-
-ROLE_ASSIGN_METHOD = 0  # 0:static, 1:by distance between ball
-
-TEAM_IP = '224.16.32.44'
+# デフォルト値（params.yaml で上書き可能）
+DEFAULT_RATE_PLAYER_STATES_PUBLISH = 0.1  # player_statsのパブリッシュ周期[s]
+DEFAULT_RATE_TF_BROADCAST = 0.1  # 各プレイヤーのtfのブロードキャスト周期[s]
+DEFAULT_RATE_SEND_TO_PLAYERS = 0.1  # 各playerへのコマンド送信周期[s]
+DEFAULT_TEAM_COLOR = CYAN
+DEFAULT_ROLE_ASSIGN_METHOD = 0
+DEFAULT_TEAM_IP = '224.16.32.44'
+DEFAULT_OWN_IP = '192.168.11.100'
+DEFAULT_PORT = 50000
+DEFAULT_NUM_PLAYERS = 5
 
 # hibikino-musashiのチーム内コマンド
 WELCOME = 00
@@ -55,8 +55,6 @@ GOAL_M = 36
 GOAL_C = 46
 DROP_BALL = 55
 CALIB_COMPASS = 66
-NUM_PLAYERS = 5
-
 # コマンドマッピング（単純変換）
 COMMAND_MAP_SIMPLE = {
     'START': START,
@@ -74,17 +72,17 @@ class PlayerServerPlugin(Plugin):
         self._context = context  # 親クラスからコンテキストをもらう
         self._node = context.node  # 親クラスからノードの実態をもらう
 
+        # ROSパラメータの読み込み
+        self.load_parameters()
+
         # レフェリーからのコマンド（musashi_msgs.msgのRefereeCmd型）
         self._refcmd = RefereeCmd()
 
         # チームの情報（プレイヤー情報の配列）
-        # PlayerStates を NUM_PLAYERS 要素の PlayerState で初期化しておく
+        # PlayerStates を num_players 要素の PlayerState で初期化しておく
         self._player_states = PlayerStates()
-        for i in range(NUM_PLAYERS):
+        for i in range(self._num_players):
             self._player_states.players.append(PlayerState())
-
-        # チームカラー
-        self._team_color = TEAM_COLOR
 
         # チームコマンドの初期化
         self.teamcmd = STOP
@@ -107,8 +105,8 @@ class PlayerServerPlugin(Plugin):
             10
         )
 
-        # tfブロードキャスター作成（NUM_PLAYERS に合わせて動的生成）
-        self.brs = [tf2_ros.TransformBroadcaster(self._node) for _ in range(NUM_PLAYERS)]
+        # tfブロードキャスター作成（num_players に合わせて動的生成）
+        self.brs = [tf2_ros.TransformBroadcaster(self._node) for _ in range(self._num_players)]
 
         # PlayerServer は Start/Stop ボタンで制御する（自動起動しない）
         self._player_server = None
@@ -124,20 +122,92 @@ class PlayerServerPlugin(Plugin):
         except Exception:
             pass
 
+        # GUIの入力フィールドにパラメータのデフォルト値を設定
+        try:
+            self._widget.lnedtOwnIP.setText(self._own_ip)
+        except Exception:
+            pass
+        try:
+            self._widget.lnedtPort.setText(str(self._port))
+        except Exception:
+            pass
+
         # GUIスレッドのスタート
         self.start_ui_thread()
 
         # PlayerStatesをパブリッシュするタイマコールバックのスタート
         self._node.timer_player_states_publish = self._node.create_timer(
-            RATE_PLAYER_STATES_PUBLISH, self.timer_callback_player_states_publish)
+            self._rate_player_states_publish, self.timer_callback_player_states_publish)
 
         # tfをブロードキャストするタイマコールバックのスタート
         self._node.timer_tf_broadcast = self._node.create_timer(
-            RATE_TF_BROADCAST, self.timer_callback_tf_broadcast)
+            self._rate_tf_broadcast, self.timer_callback_tf_broadcast)
 
         # 各プレイヤーへコマンドを送信するタイマコールバックのスタート
         self._node.timer_send_to_players = self._node.create_timer(
-            RATE_SEND_TO_PLAYERS, self.timer_callback_send_to_players)
+            self._rate_send_to_players, self.timer_callback_send_to_players)
+
+    def _declare_param(self, name, default):
+        """パラメータが未宣言の場合のみ宣言する。"""
+        if not self._node.has_parameter(name):
+            self._node.declare_parameter(name, default)
+
+    def _validate_positive_float(self, value, fallback, key_name):
+        try:
+            fval = float(value)
+            if fval <= 0.0:
+                raise ValueError('must be > 0')
+            return fval
+        except Exception:
+            self._node.get_logger().warn(
+                f'Invalid value for {key_name}: {value}. '
+                f'Use fallback {fallback}'
+            )
+            return fallback
+
+    def load_parameters(self):
+        """player_server_params.yaml から ROSパラメータを読み込む。"""
+        self._declare_param('team_ip', DEFAULT_TEAM_IP)
+        self._declare_param('team_color', DEFAULT_TEAM_COLOR)
+        self._declare_param('num_players', DEFAULT_NUM_PLAYERS)
+        self._declare_param('role_assign_method', DEFAULT_ROLE_ASSIGN_METHOD)
+        self._declare_param('own_ip', DEFAULT_OWN_IP)
+        self._declare_param('port', DEFAULT_PORT)
+        self._declare_param('rate_player_states_publish', DEFAULT_RATE_PLAYER_STATES_PUBLISH)
+        self._declare_param('rate_tf_broadcast', DEFAULT_RATE_TF_BROADCAST)
+        self._declare_param('rate_send_to_players', DEFAULT_RATE_SEND_TO_PLAYERS)
+
+        self._team_ip = str(self._node.get_parameter('team_ip').value)
+        self._team_color = int(self._node.get_parameter('team_color').value)
+        self._num_players = int(self._node.get_parameter('num_players').value)
+        self._role_assign_method = int(self._node.get_parameter('role_assign_method').value)
+        self._own_ip = str(self._node.get_parameter('own_ip').value)
+        self._port = int(self._node.get_parameter('port').value)
+        self._rate_player_states_publish = self._validate_positive_float(
+            self._node.get_parameter('rate_player_states_publish').value,
+            DEFAULT_RATE_PLAYER_STATES_PUBLISH,
+            'rate_player_states_publish',
+        )
+        self._rate_tf_broadcast = self._validate_positive_float(
+            self._node.get_parameter('rate_tf_broadcast').value,
+            DEFAULT_RATE_TF_BROADCAST,
+            'rate_tf_broadcast',
+        )
+        self._rate_send_to_players = self._validate_positive_float(
+            self._node.get_parameter('rate_send_to_players').value,
+            DEFAULT_RATE_SEND_TO_PLAYERS,
+            'rate_send_to_players',
+        )
+
+        self._node.get_logger().info(
+            f'Loaded parameters: team_ip={self._team_ip}, '
+            f'team_color={self._team_color}, num_players={self._num_players}, '
+            f'role_assign_method={self._role_assign_method}, '
+            f'own_ip={self._own_ip}, port={self._port}, '
+            f'rate_player_states_publish={self._rate_player_states_publish}, '
+            f'rate_tf_broadcast={self._rate_tf_broadcast}, '
+            f'rate_send_to_players={self._rate_send_to_players}'
+        )
 
     def create_ui(self):
         # Qwidget型のメンバ変数作成
@@ -261,7 +331,7 @@ class PlayerServerPlugin(Plugin):
     def _map_targeted_command(self, cmd, target_team):
         """target_team およびチームカラーに応じて定数を返す。"""
         # 自チームか相手かを判定
-        is_own = (target_team == TEAM_IP)
+        is_own = (target_team == self._team_ip)
         mag = (self._team_color == MAGENTA)
 
         if cmd == 'KICKOFF':
@@ -306,16 +376,10 @@ class PlayerServerPlugin(Plugin):
         # 各プレイヤーのtfをブロードキャスト
         now = self._node.get_clock().now().to_msg()
 
-        trs = [
-            TransformStamped(),
-            TransformStamped(),
-            TransformStamped(),
-            TransformStamped(),
-            TransformStamped(),
-        ]
+        trs = [TransformStamped() for _ in range(self._num_players)]
 
         for i, player in enumerate(self._player_states.players):
-            if i >= NUM_PLAYERS:
+            if i >= self._num_players:
                 break
             
             trs[i].header.stamp = now
@@ -354,6 +418,7 @@ class PlayerServerPlugin(Plugin):
     def timer_callback_send_to_players(self,):
 
         players = self._player_states.players
+        num_players = self._num_players
 
         def get_float(pl, path, default=0.0):
             try:
@@ -374,15 +439,15 @@ class PlayerServerPlugin(Plugin):
                 return default
 
         # header
-        send_data = struct.pack('ii', NUM_PLAYERS, self._team_color)
+        send_data = struct.pack('ii', num_players, self._team_color)
 
         # commands
-        cmds = [self.teamcmd for _ in range(NUM_PLAYERS)]
-        send_data += struct.pack(''.join(['i' for _ in range(NUM_PLAYERS)]), *cmds)
+        cmds = [self.teamcmd for _ in range(num_players)]
+        send_data += struct.pack(''.join(['i' for _ in range(num_players)]), *cmds)
 
         # states
-        states = [get_int(players[i], 'state') if i < len(players) else 0 for i in range(NUM_PLAYERS)]
-        send_data += struct.pack(''.join(['i' for _ in range(NUM_PLAYERS)]), *states)
+        states = [get_int(players[i], 'state') if i < len(players) else 0 for i in range(num_players)]
+        send_data += struct.pack(''.join(['i' for _ in range(num_players)]), *states)
 
         # float fields helper list
         float_fields = [
@@ -397,41 +462,41 @@ class PlayerServerPlugin(Plugin):
         ]
 
         for field in float_fields:
-            vals = [get_float(players[i], field) if i < len(players) else 0.0 for i in range(NUM_PLAYERS)]
-            send_data += struct.pack(''.join(['d' for _ in range(NUM_PLAYERS)]), *vals)
+            vals = [get_float(players[i], field) if i < len(players) else 0.0 for i in range(num_players)]
+            send_data += struct.pack(''.join(['d' for _ in range(num_players)]), *vals)
 
         # position.angle placeholder (RPY conversion required)
-        send_data += struct.pack(''.join(['d' for _ in range(NUM_PLAYERS)]), *([0.0] * NUM_PLAYERS))
+        send_data += struct.pack(''.join(['d' for _ in range(num_players)]), *([0.0] * num_players))
 
         # roles
         roles = self.roles_decision()
-        send_data += struct.pack(''.join(['i' for _ in range(NUM_PLAYERS)]), *roles)
+        send_data += struct.pack(''.join(['i' for _ in range(num_players)]), *roles)
 
         # haveball
-        haveballs = [get_int(players[i], 'haveball') if i < len(players) else 0 for i in range(NUM_PLAYERS)]
-        send_data += struct.pack(''.join(['i' for _ in range(NUM_PLAYERS)]), *haveballs)
+        haveballs = [get_int(players[i], 'haveball') if i < len(players) else 0 for i in range(num_players)]
+        send_data += struct.pack(''.join(['i' for _ in range(num_players)]), *haveballs)
 
         # moveto x/y
-        moveto_x = [get_float(players[i], 'moveto.position.x') if i < len(players) else 0.0 for i in range(NUM_PLAYERS)]
-        moveto_y = [get_float(players[i], 'moveto.position.y') if i < len(players) else 0.0 for i in range(NUM_PLAYERS)]
-        send_data += struct.pack(''.join(['d' for _ in range(NUM_PLAYERS)]), *moveto_x)
-        send_data += struct.pack(''.join(['d' for _ in range(NUM_PLAYERS)]), *moveto_y)
+        moveto_x = [get_float(players[i], 'moveto.position.x') if i < len(players) else 0.0 for i in range(num_players)]
+        moveto_y = [get_float(players[i], 'moveto.position.y') if i < len(players) else 0.0 for i in range(num_players)]
+        send_data += struct.pack(''.join(['d' for _ in range(num_players)]), *moveto_x)
+        send_data += struct.pack(''.join(['d' for _ in range(num_players)]), *moveto_y)
 
         # moveto.angle placeholder
-        send_data += struct.pack(''.join(['d' for _ in range(NUM_PLAYERS)]), *([0.0] * NUM_PLAYERS))
+        send_data += struct.pack(''.join(['d' for _ in range(num_players)]), *([0.0] * num_players))
 
         # obstacle distance / angle
-        obstacles_d = [get_float(players[i], 'obstacle.distance') if i < len(players) else 0.0 for i in range(NUM_PLAYERS)]
-        obstacles_a = [get_float(players[i], 'obstacle.angle') if i < len(players) else 0.0 for i in range(NUM_PLAYERS)]
-        send_data += struct.pack(''.join(['d' for _ in range(NUM_PLAYERS)]), *obstacles_d)
-        send_data += struct.pack(''.join(['d' for _ in range(NUM_PLAYERS)]), *obstacles_a)
+        obstacles_d = [get_float(players[i], 'obstacle.distance') if i < len(players) else 0.0 for i in range(num_players)]
+        obstacles_a = [get_float(players[i], 'obstacle.angle') if i < len(players) else 0.0 for i in range(num_players)]
+        send_data += struct.pack(''.join(['d' for _ in range(num_players)]), *obstacles_d)
+        send_data += struct.pack(''.join(['d' for _ in range(num_players)]), *obstacles_a)
 
         # state_vector: position.x, position.y, position.angle placeholder
-        pos_x = [get_float(players[i], 'position.position.x') if i < len(players) else 0.0 for i in range(NUM_PLAYERS)]
-        pos_y = [get_float(players[i], 'position.position.y') if i < len(players) else 0.0 for i in range(NUM_PLAYERS)]
-        send_data += struct.pack(''.join(['d' for _ in range(NUM_PLAYERS)]), *pos_x)
-        send_data += struct.pack(''.join(['d' for _ in range(NUM_PLAYERS)]), *pos_y)
-        send_data += struct.pack(''.join(['d' for _ in range(NUM_PLAYERS)]), *([0.0] * NUM_PLAYERS))
+        pos_x = [get_float(players[i], 'position.position.x') if i < len(players) else 0.0 for i in range(num_players)]
+        pos_y = [get_float(players[i], 'position.position.y') if i < len(players) else 0.0 for i in range(num_players)]
+        send_data += struct.pack(''.join(['d' for _ in range(num_players)]), *pos_x)
+        send_data += struct.pack(''.join(['d' for _ in range(num_players)]), *pos_y)
+        send_data += struct.pack(''.join(['d' for _ in range(num_players)]), *([0.0] * num_players))
 
         # send
         try:
@@ -455,17 +520,18 @@ class PlayerServerPlugin(Plugin):
         return
 
     def roles_decision(self,):
+        num_players = self._num_players
         # 静的ロール割り振り
         # デフォルトは ALPHA を割り当て，最後のプレイヤーを GOALIE にする
-        roles = [ALPHA for _ in range(NUM_PLAYERS)]
-        if NUM_PLAYERS >= 1:
+        roles = [ALPHA for _ in range(num_players)]
+        if num_players >= 1:
             roles[-1] = GOALIE
 
         # -----
         # ここから頑張って各プレイヤーのロールを決定する処理
         # -----
         # （案１）ボールとの距離の近さ順にAlpha, Beta,...
-        if ROLE_ASSIGN_METHOD == 1:
+        if self._role_assign_method == 1:
             # 各プレイヤーの (index, ball.distance) をリスト化
             ball_distances = []
             for player in self._player_states.players:
@@ -485,7 +551,7 @@ class PlayerServerPlugin(Plugin):
             # 近い順に役割を割り当てる（存在する範囲で）
             role_order = [ALPHA, BETA, GAMMA, DELTA]
             for i, (idx, _) in enumerate(ball_distances[:len(role_order)]):
-                if 0 <= idx < NUM_PLAYERS:
+                if 0 <= idx < num_players:
                     roles[idx] = role_order[i]
 
         # ロール決定処理ここまで

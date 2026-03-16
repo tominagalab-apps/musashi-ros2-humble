@@ -1,0 +1,18 @@
+/**:
+  ros__parameters:
+    # チームの設定
+    team_ip: '224.16.32.44'      # マルチキャストIPアドレス（レフェリーBOXが使用するチームIP）
+    team_color: 1                 # チームカラー: 0=MAGENTA, 1=CYAN
+    num_players: 5                # チームのプレイヤー数
+
+    # ロール割り当て方法
+    role_assign_method: 0         # 0=静的割り当て, 1=ボールからの距離順
+
+    # UDP サーバーのバインド設定
+    own_ip: '192.168.11.100'      # 自チームのIPアドレス（UDPサーバーのバインドに使用）
+    port: 50000                   # UDPサーバーのポート番号
+
+    # タイマー周期 [s]
+    rate_player_states_publish: 0.1  # /player_states パブリッシュ周期
+    rate_tf_broadcast: 0.1           # TFブロードキャスト周期
+    rate_send_to_players: 0.1        # 各プレイヤーへのコマンド送信周期

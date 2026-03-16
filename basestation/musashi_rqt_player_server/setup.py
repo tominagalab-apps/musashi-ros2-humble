@@ -15,6 +15,7 @@ setup(
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name, ['plugin.xml']),
         ('share/' + package_name + '/launch', glob('launch/*.py')),
+        ('share/' + package_name + '/config', glob('config/*.yaml')),
         ('lib/' + package_name, ['scripts/player_server'])
     ],
     install_requires=['setuptools'],
