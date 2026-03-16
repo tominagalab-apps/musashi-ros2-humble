@@ -45,26 +45,25 @@ PEP8コードスタイルに準拠する．
 musashi-ros2-humble（ルートディレクトリ）  
 ├── README.md
 ├── basestation
-├── behavior
-├── hardware
-├── localization
 ├── musashi_description
 ├── musashi_msgs
 ├── others
-└── perception
+└── player
+	├── behavior
+	├── communication
+	├── hardware
+	├── localization
+	└── perception
 </pre>
 
 |Name|Detail|  
 |---|---|
 |README.md|このファイル|
 |basestation|GUIを含むbasestation（旧コーチボックス）用パッケージを含める|
-|behavior|ルールベース行動決定，ステートマシン，行動選択のディレクトリ|
-|hardware|外部デバイス制御用のディレクトリ．カメラやモータ，各種センサを扱うためのパッケージを含める|
-|localization|自己位置推定用のディレクトリ|
 |musashi_description|ロボットモデルを管理するディレクトリ|  
 |musashi_msgs|独自メッセージ用のディレクトリ|
 |others|特に用はない（富永用）|
-|perception|外界認識，知覚系のディレクトリ|
+|player|player向けパッケージ群をまとめたディレクトリ（behavior, communication, hardware, localization, perception）|
 
 
 ## パッケージ作成コマンド例  
