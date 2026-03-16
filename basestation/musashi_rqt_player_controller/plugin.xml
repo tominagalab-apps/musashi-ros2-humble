@@ -1,5 +1,5 @@
 <library path="src">
-  <class name="RqtPlayerController" type="musashi_rqt_player_controller.rqt_player_controller.RqtPlayerController" base_class_type="rqt_gui_py::Plugin">
+  <class name="PlayerControllerPlugin" type="musashi_rqt_player_controller.plugin.PlayerControllerPlugin" base_class_type="rqt_gui_py::Plugin">
     <description>
       Player controller
     </description>

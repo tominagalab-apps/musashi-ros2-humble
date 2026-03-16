@@ -211,8 +211,8 @@ musashi_rqt_player_server/
 ├── src/
 │   └── musashi_rqt_player_server/
 │       ├── __init__.py
-│       ├── player_server.py
-│       └── rqt_player_server.py
+│       ├── player_udp_server.py
+│       └── plugin.py
 └── test/
     ├── test_copyright.py
     ├── test_flake8.py

@@ -147,7 +147,7 @@ basestation/
 │   ├── src/
 │   │   └── musashi_rqt_player_controller/
 │   │       ├── __init__.py
-│   │       └── rqt_player_controller.py (rqt プラグイン本体)
+│   │       └── plugin.py (rqt プラグイン本体)
 │   └── test/
 │
 ├── musashi_rqt_player_server/
@@ -164,8 +164,8 @@ basestation/
 │   ├── src/
 │   │   └── musashi_rqt_player_server/
 │   │       ├── __init__.py
-│   │       ├── rqt_player_server.py (rqt プラグイン本体)
-│   │       └── player_server.py (UDP 受信実装)
+│   │       ├── plugin.py (rqt プラグイン本体)
+│   │       └── player_udp_server.py (UDP 受信実装)
 │   └── test/
 │
 └── musashi_rviz/
@@ -196,9 +196,9 @@ basestation/
 
 | ファイル | パッケージ | 説明 |
 |---------|----------|------|
-| `rqt_player_server.py` | musashi_rqt_player_server | rqt プラグイン・UDP 受信ロジック分離予定 |
-| `player_server.py` | musashi_rqt_player_server | CSV フォーマットパース実装 |
-| `refbox_client.py` | musashi_rqt_refereebox_client | TCP ソケット・JSON パース実装 |
+| `plugin.py` | musashi_rqt_player_server | rqt プラグイン本体 |
+| `player_udp_server.py` | musashi_rqt_player_server | UDP受信・プレイヤーデータ処理 |
+| `refereebox_tcp_client.py` | musashi_rqt_refereebox_client | TCP ソケット・JSON パース実装 |
 | `bringup_launch.py` | musashi_rviz | 全体の初期化・RViz2 起動 |
 | `field_parameters.yaml` | musashi_rviz | MSL フィールド寸法定義 |
 

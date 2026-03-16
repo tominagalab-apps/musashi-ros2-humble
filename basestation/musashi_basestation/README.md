@@ -96,10 +96,10 @@ ros2 launch musashi_basestation bringup.launch.py
     │  └─ cmd: ['rqt', '-s', 'musashi_rqt_refereebox_client.RqtRefereeBoxClient']
     │
     ├─ ExecuteProcess (PlayerServer)
-    │  └─ cmd: ['rqt', '-s', 'musashi_rqt_player_server.RqtPlayerServer']
+    │  └─ cmd: ['rqt', '--standalone', 'musashi_rqt_player_server']
     │
     ├─ ExecuteProcess (PlayerController)
-    │  └─ cmd: ['rqt', '-s', 'musashi_rqt_player_controller.RqtPlayerController']
+    │  └─ cmd: ['rqt', '--standalone', 'musashi_rqt_player_controller']
     │
     └─ IncludeLaunchDescription (musashi_rviz bringup)
        └─ 'musashi_rviz/launch/bringup_launch.py'
@@ -127,9 +127,9 @@ rqt -s musashi_rqt_<package>.rqt_<package>.Rqt<Component>
 **利用方法**:
 ```bash
 # 既存設定ファイルをロードして起動（オプション）
-rqt --standalone musashi_rqt_refereebox_client.rqt_refereebox_client.RqtRefereeBoxClient \
-    --standalone musashi_rqt_player_server.rqt_player_server.RqtPlayerServer \
-    --standalone musashi_rqt_player_controller.rqt_player_controller.RqtPlayerController
+rqt --standalone musashi_rqt_refereebox_client.plugin.RefereeBoxClientPlugin \
+    --standalone musashi_rqt_player_server.plugin.PlayerServerPlugin \
+    --standalone musashi_rqt_player_controller.plugin.PlayerControllerPlugin
 ```
 
 #### config/rqt_player_control.rqt
@@ -260,13 +260,13 @@ ros2 launch musashi_basestation bringup.launch.py --log-level debug
 ros2 launch musashi_rviz bringup_launch.py
 
 # ターミナル2
-rqt -s musashi_rqt_refereebox_client.rqt_refereebox_client.RqtRefereeBoxClient
+rqt -s musashi_rqt_refereebox_client.plugin.RefereeBoxClientPlugin
 
 # ターミナル3
-rqt -s musashi_rqt_player_server.rqt_player_server.RqtPlayerServer
+rqt -s musashi_rqt_player_server.plugin.PlayerServerPlugin
 
 # ターミナル4
-rqt -s musashi_rqt_player_controller.rqt_player_controller.RqtPlayerController
+rqt -s musashi_rqt_player_controller.plugin.PlayerControllerPlugin
 ```
 
 ### デバッグモード

@@ -10,7 +10,8 @@ from musashi_msgs.msg import PlayerState
 # 例：OWN_IP='172.16.44.10'
 OWN_IP = '0.0.0.0'  # デフォルトは全インターフェース
 
-PORT = 12536  # ポート
+RECV_PORT = 12536  # basestationで受信するポート
+DEFAULT_SEND_PORT = 12536  # playerへコマンド送信する既定ポート
 
 # 各プレイヤーのIPアドレスを設定してください（必要なら上書き）
 PLAYER1_IP = '172.16.44.1'
@@ -22,26 +23,42 @@ PLAYER5_IP = '172.16.44.5'
 MAX_RECV_SIZE = 1024 * 4
 
 
-class PlayerServer(QThread):
+class PlayerUdpServer(QThread):
 
     # シグナル定義
     recievedPlayerData = Signal(int, PlayerState)
 
     # コンストラクタ
     def __init__(self, own_ip=None, port=None, player_ips=None, verbose=False):
-        super(PlayerServer, self).__init__()
+        super(PlayerUdpServer, self).__init__()
 
         self._logger = logging.getLogger(__name__)
         self._verbose = verbose
 
         # 設定の反映（外部からも指定可能）
         self._own_ip = own_ip if own_ip is not None else OWN_IP
-        self._port = port if port is not None else PORT
+        self._recv_port = port if port is not None else RECV_PORT
+        self._default_send_port = (
+            port if port is not None else DEFAULT_SEND_PORT
+        )
         # プレイヤー IP のマッピング list or dict
         if player_ips is None:
-            self._player_ips = [PLAYER1_IP, PLAYER2_IP, PLAYER3_IP, PLAYER4_IP, PLAYER5_IP]
+            self._player_ips = [
+                PLAYER1_IP,
+                PLAYER2_IP,
+                PLAYER3_IP,
+                PLAYER4_IP,
+                PLAYER5_IP,
+            ]
         else:
             self._player_ips = player_ips
+
+        # 送信先キャッシュ: player_id(1-based) -> (ip, port)
+        # 初期値は設定済みIP + 既定送信ポート。
+        self._player_targets = {
+            i + 1: (ip, self._default_send_port)
+            for i, ip in enumerate(self._player_ips)
+        }
 
         # ソケットの作成 (IPv4, UDP)
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -61,7 +78,12 @@ class PlayerServer(QThread):
         self._isRun = True
 
         # 受信バッファなど
-        self._logger.debug('PlayerServer initialized: own_ip=%s port=%s', self._own_ip, self._port)
+        self._logger.debug(
+            'PlayerServer initialized: own_ip=%s recv_port=%s send_port=%s',
+            self._own_ip,
+            self._recv_port,
+            self._default_send_port,
+        )
 
     # デストラクタ
     def __del__(self,):
@@ -70,9 +92,13 @@ class PlayerServer(QThread):
     def open(self,):
         # バインド（紐付け）
         try:
-            bind_addr = (self._own_ip, self._port)
+            bind_addr = (self._own_ip, self._recv_port)
             self._socket.bind(bind_addr)
-            self._logger.info('PlayerServer bound to %s:%s', bind_addr[0], bind_addr[1])
+            self._logger.info(
+                'PlayerServer bound to %s:%s',
+                bind_addr[0],
+                bind_addr[1],
+            )
         except Exception as e:
             self._logger.warning('Failed to bind PlayerServer socket: %s', e)
             raise
@@ -133,7 +159,10 @@ class PlayerServer(QThread):
                         # fallback: IP の末尾を利用
                         player_no = int(player_ip.split('.')[-1])
                 except Exception:
-                    self._logger.warning('Failed to determine player number from addr %s', addr)
+                    self._logger.warning(
+                        'Failed to determine player number from addr %s',
+                        addr,
+                    )
                     continue
 
                 # PlayerState型に値を代入（変換は例外を捕捉してスキップ）
@@ -175,8 +204,27 @@ class PlayerServer(QThread):
                     # player_state.obstacle.angle = float(values[19])
 
                 except Exception as e:
-                    self._logger.error('Failed to parse player message from %s: %s', addr, e)
+                    self._logger.error(
+                        'Failed to parse player message from %s: %s',
+                        addr,
+                        e,
+                    )
                     continue
+
+                # 送信先を更新（受信元の実アドレス/ポートを優先して学習）
+                try:
+                    player_id = int(player_state.id)
+                except Exception:
+                    player_id = player_no
+
+                if player_id is not None:
+                    self._player_targets[player_id] = (addr[0], addr[1])
+                    self._logger.debug(
+                        'Updated target for player%d -> %s:%s',
+                        player_id,
+                        addr[0],
+                        addr[1],
+                    )
 
                 # シグナル発行（ID ベースで送る）
                 try:
@@ -193,14 +241,46 @@ class PlayerServer(QThread):
         try:
             self._socket.sendto(binary_data, player_addr)
         except socket.error as e:
-            raise Exception('socket error [{}] in sending to {}'.format(e, player_addr[0]))
+            raise Exception(
+                'socket error [{}] in sending to {}:{}'.format(
+                    e,
+                    player_addr[0],
+                    player_addr[1],
+                )
+            )
 
     def broadcast(self, binary_data):
-        try:
-            for ip in self._player_ips:
-                self.send_to_player(binary_data, (ip, self._port))
-        except Exception as e:
-            raise Exception(e)
+        errors = []
+
+        # 1..N の順で送信。学習済みターゲットがあればそれを優先。
+        for player_id in range(1, len(self._player_ips) + 1):
+            target = self._player_targets.get(player_id)
+            if target is None:
+                target = (
+                    self._player_ips[player_id - 1],
+                    self._default_send_port,
+                )
+
+            try:
+                self.send_to_player(binary_data, target)
+                self._logger.debug(
+                    'Command sent to player%d at %s:%s',
+                    player_id,
+                    target[0],
+                    target[1],
+                )
+            except Exception as e:
+                self._logger.error(
+                    'Failed sending to player%d at %s:%s: %s',
+                    player_id,
+                    target[0],
+                    target[1],
+                    e,
+                )
+                errors.append('player{}: {}'.format(player_id, e))
+
+        if errors:
+            raise Exception('; '.join(errors))
 
     def euler_to_quaternion(self, roll, pitch, yaw):
         qx = math.sin(roll/2) * math.cos(pitch/2) * math.cos(yaw/2) - \
@@ -212,3 +292,7 @@ class PlayerServer(QThread):
         qw = math.cos(roll/2) * math.cos(pitch/2) * math.cos(yaw/2) + \
             math.sin(roll/2) * math.sin(pitch/2) * math.sin(yaw/2)
         return [qx, qy, qz, qw]
+
+
+# Backward compatibility alias
+PlayerServer = PlayerUdpServer

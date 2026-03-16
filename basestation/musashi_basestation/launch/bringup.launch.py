@@ -1,5 +1,5 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.substitutions import LaunchConfiguration
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from ament_index_python.packages import get_package_share_directory
@@ -39,17 +39,27 @@ def generate_launch_description():
             }.items(),
         ),
 
-        # PlayerServer を別ウィンドウで起動
-        ExecuteProcess(
-           cmd=['rqt', '-s', 'musashi_rqt_player_server.rqt_player_server.RqtPlayerServer'],
-           output='screen'
-       ), 
-       
-       # PlayerController を別ウィンドウで起動
-        ExecuteProcess(
-           cmd=['rqt', '-s', 'musashi_rqt_player_controller.rqt_player_controller.RqtPlayerController'],
-           output='screen'
-       ),
+        # PlayerServer は専用 launch を利用して起動
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                os.path.join(
+                    get_package_share_directory('musashi_rqt_player_server'),
+                    'launch',
+                    'rqt_player_server.launch.py',
+                )
+            )
+        ),
+
+        # PlayerController は専用 launch を利用して起動
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                os.path.join(
+                    get_package_share_directory('musashi_rqt_player_controller'),
+                    'launch',
+                    'rqt_player_controller.launch.py',
+                )
+            )
+        ),
         
         # フィールド，プレイヤー可視化用rvizの起動
         IncludeLaunchDescription(

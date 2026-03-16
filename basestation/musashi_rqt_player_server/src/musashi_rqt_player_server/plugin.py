@@ -7,7 +7,7 @@ from qt_gui.plugin import Plugin
 from python_qt_binding.QtCore import QTimer, Slot
 
 
-from musashi_rqt_player_server.player_server import PlayerServer
+from musashi_rqt_player_server.player_udp_server import PlayerUdpServer
 from musashi_basestation.common.constants import MAGENTA, CYAN, ALPHA, BETA, GAMMA, DELTA, GOALIE  # 共通定数（チームカラー・役割）をmusashi_basestationで一元管理
 
 from geometry_msgs.msg import TransformStamped
@@ -65,10 +65,10 @@ COMMAND_MAP_SIMPLE = {
     'WELCOME': WELCOME,
 }
 
-class RqtPlayerServer(Plugin):
+class PlayerServerPlugin(Plugin):
     def __init__(self, context):
-        super(RqtPlayerServer, self).__init__(context)
-        self.setObjectName('RqtPlayerServer')
+        super(PlayerServerPlugin, self).__init__(context)
+        self.setObjectName('PlayerServerPlugin')
         self._context = context  # 親クラスからコンテキストをもらう
         self._node = context.node  # 親クラスからノードの実態をもらう
 
@@ -202,7 +202,7 @@ class RqtPlayerServer(Plugin):
         except Exception:
             bind_port = None
 
-        self._player_server = PlayerServer(own_ip=bind_ip, port=bind_port)
+        self._player_server = PlayerUdpServer(own_ip=bind_ip, port=bind_port)
         self._player_server.recievedPlayerData.connect(self.onRecievedPlayerData)
         try:
             self._player_server.open()
@@ -435,7 +435,9 @@ class RqtPlayerServer(Plugin):
         try:
             self._player_server.broadcast(send_data)
         except Exception as e:
-            self._node.get_logger().error(f'{e}: Please confirm Player IP address in player_server.py')
+            self._node.get_logger().error(
+                f'{e}: Please confirm Player IP address in player_udp_server.py'
+            )
 
         return
 
@@ -486,3 +488,7 @@ class RqtPlayerServer(Plugin):
 
         # ロール決定処理ここまで
         return roles  # 結果
+
+
+# Backward compatibility alias
+RqtPlayerServer = PlayerServerPlugin
