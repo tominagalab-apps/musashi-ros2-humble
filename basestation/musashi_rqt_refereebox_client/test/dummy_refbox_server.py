@@ -34,7 +34,10 @@ def main():
     print(f"[DummyRefBox] Sent: {msg}")
 
     # WELCOMコマンドを送信
-    welcom_msg = json.dumps({"command": "WELCOM", "targetTeam": "224.16.32.44"}) + '\0'
+    welcom_msg = (
+        json.dumps({"command": "WELCOM", "targetTeam": "224.16.32.44"})
+        + '\0'
+    )
     client_socket.sendall(welcom_msg.encode('utf-8'))
     print(f"[DummyRefBox] Sent: {welcom_msg}")
 
@@ -89,8 +92,9 @@ def main():
     print("------------------------\n")
     # commandでtargetTeam空文字にするリスト
     empty_team_commands = [
-        "START", "STOP", "DROP_BALL", "HALF_TIME", "END_GAME", "GAME_OVER", "PARK",
-        "FIRST_HALF", "SECOND_HALF", "FIRST_HALF_OVERTIME", "SECOND_HALF_OVERTIME", "RESET"
+        "START", "STOP", "DROP_BALL", "HALF_TIME", "END_GAME", "GAME_OVER",
+        "PARK", "FIRST_HALF", "SECOND_HALF", "FIRST_HALF_OVERTIME",
+        "SECOND_HALF_OVERTIME", "RESET"
     ]
     try:
         while True:
@@ -116,7 +120,10 @@ def main():
                     continue
 
             # commandが指定リストならtargetTeamを空文字に
-            if isinstance(obj, dict) and obj.get("command") in empty_team_commands:
+            if (
+                isinstance(obj, dict)
+                and obj.get("command") in empty_team_commands
+            ):
                 obj["targetTeam"] = ""
 
             msg = json.dumps(obj) + '\0'
@@ -126,6 +133,7 @@ def main():
         client_socket.close()
         server_socket.close()
         print("[DummyRefBox] Server stopped.")
+
 
 if __name__ == '__main__':
     main()

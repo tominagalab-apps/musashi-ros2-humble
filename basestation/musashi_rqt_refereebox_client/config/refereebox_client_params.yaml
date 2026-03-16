@@ -1,0 +1,4 @@
+/**:
+  ros__parameters:
+    gui_update_period_sec: 0.033
+    player_states_send_period_sec: 0.25

@@ -1,15 +1,20 @@
 """Public exports for the musashi_rqt_refereebox_client package.
 
 This file makes key classes and modules available for simple imports,
-e.g. `from musashi_rqt_refereebox_client import RqtRefereeBoxClient`.
+e.g. `from musashi_rqt_refereebox_client import RefereeBoxClientPlugin`.
 """
 
-from .refbox_client import RefBoxClient
-from .rqt_refereebox_plugin import RqtRefereeBoxClient
-from . import json_log
+from .refereebox_tcp_client import RefereeBoxTcpClient, RefBoxClient
+from .plugin import RefereeBoxClientPlugin, RqtRefereeBoxClient
+from .ros_bridge import RosBridge, RosInterface
+from . import player_states_serializer
 
 __all__ = [
-	'RefBoxClient',
-	'RqtRefereeBoxClient',
-	'json_log',
+    'RefereeBoxTcpClient',
+    'RefBoxClient',
+    'RefereeBoxClientPlugin',
+    'RqtRefereeBoxClient',
+    'RosBridge',
+    'RosInterface',
+    'player_states_serializer',
 ]
