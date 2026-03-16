@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 from ament_index_python.resources import get_resource
 from qt_gui.plugin import Plugin
 from python_qt_binding import loadUi
