@@ -6,15 +6,12 @@ import json
 import logging
 import traceback
 
-from musashi_msgs.msg import PlayerState
-from musashi_msgs.msg import PlayerStates
-
-from musashi_rqt_refereebox_client import json_log
+from musashi_rqt_refereebox_client import player_states_serializer
 
 MAX_RECV_SIZE = 1024 * 4  # byte
 
 
-class RefBoxClient(QThread):
+class RefereeBoxTcpClient(QThread):
 
     # シグナル定義 (既存コードとの互換性維持のため綴りは変更しない)
     recievedCommand = Signal(bytes, str, str)
@@ -25,7 +22,7 @@ class RefBoxClient(QThread):
         Args:
             verbose (bool): True の場合は標準出力へ詳細を出す（デバッグ用）。
         """
-        super(RefBoxClient, self).__init__()
+        super(RefereeBoxTcpClient, self).__init__()
 
         # ログ
         self._logger = logging.getLogger(__name__)
@@ -106,7 +103,7 @@ class RefBoxClient(QThread):
     # 一度辞書型を作ってjsonモジュールを使って変換する方法をとる
     def send_jsonlog(self, player_states):
         # まずはヘッダーを作成する
-        data = json_log.make_header(self.connected_time)  # dataは辞書型
+        data = player_states_serializer.make_header(self.connected_time)
 
         # ------------------------------
         # 以下，各プレイヤーの状態を読み取りながらリストを作っていく
@@ -136,7 +133,7 @@ class RefBoxClient(QThread):
             _players.append(_player)
 
         # data辞書にリストを追加．キー名は'robots'
-        data['robots'] = json_log.make_players(_players)
+        data['robots'] = player_states_serializer.make_players(_players)
 
         # ボールについてリストを作成する．
         balls = []
@@ -154,12 +151,14 @@ class RefBoxClient(QThread):
             ]
             balls.append(_ball)
         # data辞書にリストを追加．キー名は'balls'
-        data['balls'] = json_log.make_balls(balls)
+        data['balls'] = player_states_serializer.make_balls(balls)
 
         # 障害物についてリストを作成する．ただし大会規定のワールド座標系に合わせないといけないので座標変換が必要
         # チーム内xy軸の定義と大会ルールの定義は異なっている
         data_obstacles = []
-        for i, player_state in enumerate(player_states.players):  # ロボット台数分の繰り返し
+        for i, player_state in enumerate(
+            player_states.players
+        ):  # ロボット台数分の繰り返し
             _obstacle_data = {
                 'position': [0.0, 0.0, 0.0],
                 'velocity': [0.0, 0.0, 0.0],
@@ -214,7 +213,9 @@ class RefBoxClient(QThread):
                         recv_json = json.loads(text)
                     except Exception as e:
                         # パース失敗はログに記録して次へ
-                        self._log('error', 'Failed to parse incoming message:', e)
+                        self._log(
+                            'error', 'Failed to parse incoming message:', e
+                        )
                         if self._verbose:
                             self._log('error', 'Raw message:', msg)
                         continue
@@ -225,10 +226,14 @@ class RefBoxClient(QThread):
 
                     # シグナルの発行 (生データと抽出したフィールドを送る)
                     try:
-                        self.recievedCommand.emit(msg + b'\0', command, targetTeam)
+                        self.recievedCommand.emit(
+                            msg + b'\0', command, targetTeam
+                        )
                     except Exception:
                         # シグナル送出時の例外はログに残す
-                        self._log('error', 'Failed to emit recievedCommand signal')
+                        self._log(
+                            'error', 'Failed to emit recievedCommand signal'
+                        )
                         self._log('error', traceback.format_exc())
 
             except Exception as e:
@@ -249,3 +254,7 @@ class RefBoxClient(QThread):
             pass
 
         self._isRun = False
+
+
+# Backward compatibility alias
+RefBoxClient = RefereeBoxTcpClient

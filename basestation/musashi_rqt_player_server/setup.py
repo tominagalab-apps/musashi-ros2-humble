@@ -1,4 +1,5 @@
 from setuptools import find_packages, setup
+from glob import glob
 
 package_name = 'musashi_rqt_player_server'
 
@@ -13,6 +14,7 @@ setup(
         ('share/' + package_name + '/resource', ['resource/player_server.ui']),
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name, ['plugin.xml']),
+        ('share/' + package_name + '/launch', glob('launch/*.py')),
         ('lib/' + package_name, ['scripts/player_server'])
     ],
     install_requires=['setuptools'],

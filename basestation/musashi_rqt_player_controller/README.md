@@ -168,7 +168,7 @@ musashi_rqt_player_controller/
 ├── src/
 │   └── musashi_rqt_player_controller/
 │       ├── __init__.py
-│       └── rqt_player_controller.py
+│       └── plugin.py
 └── test/
     ├── test_copyright.py
     ├── test_flake8.py

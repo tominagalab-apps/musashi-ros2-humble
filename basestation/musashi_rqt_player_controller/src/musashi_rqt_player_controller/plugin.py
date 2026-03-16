@@ -16,11 +16,11 @@ PLAYER_NUM = 5
 
 
 
-class RqtPlayerController(Plugin):
+class PlayerControllerPlugin(Plugin):
     def __init__(self, context):
-        super(RqtPlayerController, self).__init__(context)
+        super(PlayerControllerPlugin, self).__init__(context)
 
-        self.setObjectName('RqtPlayerController')
+        self.setObjectName('PlayerControllerPlugin')
         self._context = context
         self._node = context.node
 
@@ -126,3 +126,7 @@ class RqtPlayerController(Plugin):
                 self._pwidgets[i].ledtDispColorAndRole.setText('Goalie')
 
         return
+
+
+# Backward compatibility alias
+RqtPlayerController = PlayerControllerPlugin

@@ -26,7 +26,7 @@ musashi_basestation/
 │   ├── rqt_basestation_plugins.rqt  │
 │   └── rqt_player_control.rqt       │
 ├── launch/ (統合launch file)       │
-│   └── rqt_basestation.launch.py    │
+│   └── bringup.launch.py            │
 ├── resource/                       │
 │   └── musashi_basestation          │
 ├── src/                             │
@@ -43,7 +43,7 @@ musashi_basestation/
 ### 基本的な起動（推奨）
 
 ```bash
-ros2 launch musashi_basestation rqt_basestation.launch.py
+ros2 launch musashi_basestation bringup.launch.py
 ```
 
 このコマンド一つで、以下の処理が実行されます：
@@ -73,7 +73,7 @@ ros2 launch musashi_basestation rqt_basestation.launch.py
 
 ## Launch ファイル詳細
 
-### rqt_basestation.launch.py
+### bringup.launch.py
 
 **トップレベルの統合launch file** ─ 通常こちらを起動します
 
@@ -96,10 +96,10 @@ ros2 launch musashi_basestation rqt_basestation.launch.py
     │  └─ cmd: ['rqt', '-s', 'musashi_rqt_refereebox_client.RqtRefereeBoxClient']
     │
     ├─ ExecuteProcess (PlayerServer)
-    │  └─ cmd: ['rqt', '-s', 'musashi_rqt_player_server.RqtPlayerServer']
+    │  └─ cmd: ['rqt', '--standalone', 'musashi_rqt_player_server']
     │
     ├─ ExecuteProcess (PlayerController)
-    │  └─ cmd: ['rqt', '-s', 'musashi_rqt_player_controller.RqtPlayerController']
+    │  └─ cmd: ['rqt', '--standalone', 'musashi_rqt_player_controller']
     │
     └─ IncludeLaunchDescription (musashi_rviz bringup)
        └─ 'musashi_rviz/launch/bringup_launch.py'
@@ -127,9 +127,9 @@ rqt -s musashi_rqt_<package>.rqt_<package>.Rqt<Component>
 **利用方法**:
 ```bash
 # 既存設定ファイルをロードして起動（オプション）
-rqt --standalone musashi_rqt_refereebox_client.rqt_refereebox_client.RqtRefereeBoxClient \
-    --standalone musashi_rqt_player_server.rqt_player_server.RqtPlayerServer \
-    --standalone musashi_rqt_player_controller.rqt_player_controller.RqtPlayerController
+rqt --standalone musashi_rqt_refereebox_client.plugin.RefereeBoxClientPlugin \
+    --standalone musashi_rqt_player_server.plugin.PlayerServerPlugin \
+    --standalone musashi_rqt_player_controller.plugin.PlayerControllerPlugin
 ```
 
 #### config/rqt_player_control.rqt
@@ -150,7 +150,7 @@ launch ファイルを一時的に修正するか、以下の手順で対応：
 # 方法1: musashi_rviz の player_num パラメータを変更
 ros2 launch musashi_rviz bringup_launch.py player_num:=3
 
-# 方法2: rqt_basestation.launch.py を修正
+# 方法2: bringup.launch.py を修正
 # （下記「カスタマイズ方法」セクション参照）
 ```
 
@@ -160,7 +160,7 @@ ros2 launch musashi_rviz bringup_launch.py player_num:=3
 
 ```
 launch/
-└── rqt_basestation.launch.py
+└── bringup.launch.py
     ├─ Import: LaunchDescription, ExecuteProcess, IncludeLaunchDescription
     ├─ RefereeBoxClient 起動
     ├─ PlayerServer 起動
@@ -246,7 +246,7 @@ export DISPLAY=:0
 rqt
 
 # launch ファイルをverboseで実行
-ros2 launch musashi_basestation rqt_basestation.launch.py --log-level debug
+ros2 launch musashi_basestation bringup.launch.py --log-level debug
 ```
 
 #### 問題3: RVizが起動されるが、他のrqtウィンドウが見えない
@@ -260,20 +260,20 @@ ros2 launch musashi_basestation rqt_basestation.launch.py --log-level debug
 ros2 launch musashi_rviz bringup_launch.py
 
 # ターミナル2
-rqt -s musashi_rqt_refereebox_client.rqt_refereebox_client.RqtRefereeBoxClient
+rqt -s musashi_rqt_refereebox_client.plugin.RefereeBoxClientPlugin
 
 # ターミナル3
-rqt -s musashi_rqt_player_server.rqt_player_server.RqtPlayerServer
+rqt -s musashi_rqt_player_server.plugin.PlayerServerPlugin
 
 # ターミナル4
-rqt -s musashi_rqt_player_controller.rqt_player_controller.RqtPlayerController
+rqt -s musashi_rqt_player_controller.plugin.PlayerControllerPlugin
 ```
 
 ### デバッグモード
 
 ```bash
 # Launch ファイルを詳細ログで実行
-ros2 launch musashi_basestation rqt_basestation.launch.py \
+ros2 launch musashi_basestation bringup.launch.py \
     --log-level debug
 ```
 
@@ -284,7 +284,7 @@ ros2 launch musashi_basestation rqt_basestation.launch.py \
 launch ファイルにパラメータを追加する例：
 
 ```python
-# rqt_basestation.launch.py を以下のように修正
+# bringup.launch.py を以下のように修正
 
 from launch import LaunchDescription, LaunchContext
 from launch.actions import ExecuteProcess, IncludeLaunchDescription
