@@ -143,8 +143,8 @@ class PlayerUdpServer(QThread):
 
                 values = recv_str.split(',')
 
-                # 期待するフィールド数の簡易チェック（最低20項目を期待）
-                if len(values) < 20:
+                # 期待するフィールド数の簡易チェック（最低19項目を期待）
+                if len(values) < 19:
                     self._logger.warning('Malformed player message from %s: insufficient fields (%d)', addr, len(values))
                     continue
 
