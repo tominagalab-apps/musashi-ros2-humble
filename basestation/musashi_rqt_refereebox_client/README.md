@@ -109,10 +109,10 @@ GUI更新周期と RefereeBox への player_states 送信周期は、ROS2パラメータで変更でき
 
 ### 設定方法
 
-`rqt_basestation.launch.py` から起動する場合は、launch引数で上書きできます。
+`bringup.launch.py` から起動する場合は、launch引数で上書きできます。
 
 ```bash
-ros2 launch musashi_basestation rqt_basestation.launch.py \
+ros2 launch musashi_basestation bringup.launch.py \
   gui_update_period_sec:=0.05 \
   player_states_send_period_sec:=0.2
 ```

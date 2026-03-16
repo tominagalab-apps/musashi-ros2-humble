@@ -32,7 +32,7 @@ RoboCup MSL（Middle Size League）の試合管制システムとして機能し
 
 **全コンポーネントを一括起動：**
 ```bash
-ros2 launch musashi_basestation rqt_basestation.launch.py
+ros2 launch musashi_basestation bringup.launch.py
 ```
 
 このコマンド一つで以下の4つが自動起動されます：
@@ -107,7 +107,7 @@ basestation/
 │   │   ├── rqt_basestation_plugins.rqt
 │   │   └── rqt_player_control.rqt
 │   ├── launch/ (全体 launch ファイル)
-│   │   └── rqt_basestation.launch.py
+│   │   └── bringup.launch.py
 │   ├── resource/
 │   │   └── musashi_basestation
 │   ├── src/

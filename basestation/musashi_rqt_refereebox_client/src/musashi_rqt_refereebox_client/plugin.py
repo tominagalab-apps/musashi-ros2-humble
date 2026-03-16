@@ -14,9 +14,6 @@ from musashi_rqt_refereebox_client.ros_bridge import RosBridge
 
 PKG_NAME = 'musashi_rqt_refereebox_client'
 UI_FILE_NAME = 'refereebox_client.ui'
-DEFAULT_GUI_UPDATE_PERIOD = 0.033  # GUI update period [s]
-DEFAULT_PLAYER_STATES_SEND_PERIOD = 0.25  # Timer callback period [s]
-
 
 class RefereeBoxClientPlugin(Plugin):
     def __init__(self, context):
@@ -29,21 +26,28 @@ class RefereeBoxClientPlugin(Plugin):
         self._refbox_client = None
         self.player_states = None
 
+        # パラメータの読み込み
         (
             self.gui_update_period,
             self.player_states_send_period,
         ) = self.load_period_parameters()
 
+        # UIの作成
         self.create_ui()
+        # シグナル・スロットの接続はUI作成後に行う必要があるため、ここで呼び出す
         self.connect_signals_slots()
+        
         # ROS2通信インターフェースを生成
         self.ros = RosBridge(
             self._node,
             player_states_callback=self.player_states_callback,
         )
+        # プレイヤー状態送信用のQTimerを開始
         self._node.timer = self._node.create_timer(
             self.player_states_send_period, self.timer_callback
         )
+        
+        # ui更新用のQTimerを開始
         self.start_ui_thread()
 
     def _validate_positive_float(self, value, fallback, key_name):
@@ -63,24 +67,25 @@ class RefereeBoxClientPlugin(Plugin):
         """Load timer periods from ROS2 parameters with fallback defaults."""
         if not self._node.has_parameter('gui_update_period_sec'):
             self._node.declare_parameter(
-                'gui_update_period_sec', DEFAULT_GUI_UPDATE_PERIOD
+                'gui_update_period_sec', 
+                0.033
             )
         if not self._node.has_parameter('player_states_send_period_sec'):
             self._node.declare_parameter(
                 'player_states_send_period_sec',
-                DEFAULT_PLAYER_STATES_SEND_PERIOD,
+                0.25,
             )
 
         gui_update_period = self._validate_positive_float(
             self._node.get_parameter('gui_update_period_sec').value,
-            DEFAULT_GUI_UPDATE_PERIOD,
+            0.033,
             'gui_update_period_sec',
         )
         player_states_send_period = self._validate_positive_float(
             self._node.get_parameter(
                 'player_states_send_period_sec'
             ).value,
-            DEFAULT_PLAYER_STATES_SEND_PERIOD,
+            0.25,
             'player_states_send_period_sec',
         )
 
@@ -150,23 +155,32 @@ class RefereeBoxClientPlugin(Plugin):
         """Attempt to connect to the RefereeBox and set up callbacks."""
         QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
+            # RefereeBoxTcpClientのインスタンスを作成
             self._refbox_client = RefereeBoxTcpClient()
+            
+            # UIからIPアドレスとポート番号を取得
             refboxIP = self._widget.lnedtIP.text()
             refboxPort = int(self._widget.lnedtPort.text())
             self._node.get_logger().info(
                 f'Try to connect to RefereeBox [{refboxIP}:{refboxPort}] ...'
             )
+            
+            # 接続処理
             isConnect = self._refbox_client.connect(refboxIP, refboxPort)
+            
             if isConnect:
+                # 接続成功
                 self._node.get_logger().info(
                     'Successfully connected to RefereeBox'
                 )
+                # レフェリーコマンド受信時のシグナルをスロットに接続
                 self._refbox_client.recievedCommand.connect(
-                    self.onRecievedCommand
+                    self.on_received_refcommand # スロット関数
                 )
                 self._refbox_client.start()
                 self.is_connected_refbox = True
             else:
+                # 接続失敗
                 self._node.get_logger().error(
                     'Failed to connect to RefereeBox'
                 )
@@ -193,9 +207,9 @@ class RefereeBoxClientPlugin(Plugin):
             self._refbox_client = None
             self.is_connected_refbox = False
 
-    def onRecievedCommand(self, recv, command, targetTeam):
+    def on_received_refcommand(self, recv, command, targetTeam):
         """Handle command from RefereeBox and publish RefereeCmd message."""
-        self._node.get_logger().info(
+        self._node.get_logger().debug(
             f'Recieved: command={command}, targetTeam={targetTeam}'
         )
         # Update the structured display
