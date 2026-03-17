@@ -12,6 +12,9 @@ GAMMA = 3
 DELTA = 4
 GOALIE = 5
 
+# チーム設定
+TEAM_IP = '224.16.32.44'
+
 # hibikino-musashiのチーム内コマンド
 WELCOME = 0
 START = 10
