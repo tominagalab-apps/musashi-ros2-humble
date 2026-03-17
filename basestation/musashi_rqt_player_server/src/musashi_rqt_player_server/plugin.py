@@ -10,7 +10,7 @@ from python_qt_binding.QtCore import QTimer, Slot
 
 
 from musashi_rqt_player_server.player_udp_server import PlayerUdpServer
-from musashi_basestation.common.constants import MAGENTA, CYAN, ALPHA, BETA, GAMMA, DELTA, GOALIE  # 共通定数（チームカラー・役割）をmusashi_basestationで一元管理
+from musashi_basestation.common import constants
 
 from geometry_msgs.msg import TransformStamped
 from musashi_msgs.msg import RefereeCmd
@@ -26,43 +26,25 @@ UI_FILE_NAME = 'player_server.ui'
 DEFAULT_RATE_PLAYER_STATES_PUBLISH = 0.1  # player_statsのパブリッシュ周期[s]
 DEFAULT_RATE_TF_BROADCAST = 0.1  # 各プレイヤーのtfのブロードキャスト周期[s]
 DEFAULT_RATE_SEND_TO_PLAYERS = 0.1  # 各playerへのコマンド送信周期[s]
-DEFAULT_TEAM_COLOR = CYAN
+DEFAULT_TEAM_COLOR = constants.CYAN
 DEFAULT_ROLE_ASSIGN_METHOD = 0
 DEFAULT_TEAM_IP = '224.16.32.44'
 DEFAULT_OWN_IP = '192.168.11.100'
 DEFAULT_PORT = 50000
 DEFAULT_NUM_PLAYERS = 5
 
-# hibikino-musashiのチーム内コマンド
-WELCOME = 00
-START = 10
-STOP = 11
-FIRST = 20
-SECOND = 21
-KICKOFF_M = 30
-KICKOFF_C = 40
-THROWIN_M = 31
-THROWIN_C = 41
-CORNER_KICK_M = 32
-CORNER_KICK_C = 42
-GOAL_KICK_M = 33
-GOAL_KICK_C = 43
-FREE_KICK_M = 34
-FREE_KICK_C = 44
-PENALTY_M = 35
-PENALTY_C = 45
-GOAL_M = 36
-GOAL_C = 46
-DROP_BALL = 55
-CALIB_COMPASS = 66
+RATE_PLAYER_STATES_PUBLISH = 0.1  # player_statsのパブリッシュ周期[s]
+RATE_TF_BROADCAST = 0.1  # 各プレイヤーのtfのブロードキャスト周期[s]
+RATE_SEND_TO_PLAYERS = 0.1  # 各playerへのコマンド送信周期[s]
+
 # コマンドマッピング（単純変換）
 COMMAND_MAP_SIMPLE = {
-    'START': START,
-    'STOP': STOP,
-    'DROP_BALL': DROP_BALL,
-    'FIRST_HALF': FIRST,
-    'SECOND_HALF': SECOND,
-    'WELCOME': WELCOME,
+    'START': constants.START,
+    'STOP': constants.STOP,
+    'DROP_BALL': constants.DROP_BALL,
+    'FIRST_HALF': constants.FIRST,
+    'SECOND_HALF': constants.SECOND,
+    'WELCOME': constants.WELCOME,
 }
 
 class PlayerServerPlugin(Plugin):
@@ -85,7 +67,7 @@ class PlayerServerPlugin(Plugin):
             self._player_states.players.append(PlayerState())
 
         # チームコマンドの初期化
-        self.teamcmd = STOP
+        self.teamcmd = constants.STOP
 
         # ウィジェットインスタンスを作成
         self.create_ui()
@@ -332,36 +314,36 @@ class PlayerServerPlugin(Plugin):
         """target_team およびチームカラーに応じて定数を返す。"""
         # 自チームか相手かを判定
         is_own = (target_team == self._team_ip)
-        mag = (self._team_color == MAGENTA)
+        mag = (self._team_color == constants.MAGENTA)
 
         if cmd == 'KICKOFF':
-            return KICKOFF_M if is_own and mag else (
-                KICKOFF_C if is_own and not mag else (
-                    KICKOFF_C if mag else KICKOFF_M))
+            return constants.KICKOFF_M if is_own and mag else (
+                constants.KICKOFF_C if is_own and not mag else (
+                    constants.KICKOFF_C if mag else constants.KICKOFF_M))
         if cmd == 'GOALKICK':
-            return GOAL_KICK_M if is_own and mag else (
-                GOAL_KICK_C if is_own and not mag else (
-                    GOAL_KICK_C if mag else GOAL_KICK_M))
+            return constants.GOAL_KICK_M if is_own and mag else (
+                constants.GOAL_KICK_C if is_own and not mag else (
+                    constants.GOAL_KICK_C if mag else constants.GOAL_KICK_M))
         if cmd == 'THROWIN':
-            return THROWIN_M if is_own and mag else (
-                THROWIN_C if is_own and not mag else (
-                    THROWIN_C if mag else THROWIN_M))
+            return constants.THROWIN_M if is_own and mag else (
+                constants.THROWIN_C if is_own and not mag else (
+                    constants.THROWIN_C if mag else constants.THROWIN_M))
         if cmd == 'CORNER':
-            return CORNER_KICK_M if is_own and mag else (
-                CORNER_KICK_C if is_own and not mag else (
-                    CORNER_KICK_C if mag else CORNER_KICK_M))
+            return constants.CORNER_KICK_M if is_own and mag else (
+                constants.CORNER_KICK_C if is_own and not mag else (
+                    constants.CORNER_KICK_C if mag else constants.CORNER_KICK_M))
         if cmd == 'PENALTY':
-            return PENALTY_M if is_own and mag else (
-                PENALTY_C if is_own and not mag else (
-                    PENALTY_C if mag else PENALTY_M))
+            return constants.PENALTY_M if is_own and mag else (
+                constants.PENALTY_C if is_own and not mag else (
+                    constants.PENALTY_C if mag else constants.PENALTY_M))
         if cmd == 'FREEKICK':
-            return FREE_KICK_M if is_own and mag else (
-                FREE_KICK_C if is_own and not mag else (
-                    FREE_KICK_C if mag else FREE_KICK_M))
+            return constants.FREE_KICK_M if is_own and mag else (
+                constants.FREE_KICK_C if is_own and not mag else (
+                    constants.FREE_KICK_C if mag else constants.FREE_KICK_M))
         if cmd == 'GOAL':
-            return GOAL_M if is_own and mag else (
-                GOAL_C if is_own and not mag else (
-                    GOAL_C if mag else GOAL_M))
+            return constants.GOAL_M if is_own and mag else (
+                constants.GOAL_C if is_own and not mag else (
+                    constants.GOAL_C if mag else constants.GOAL_M))
         # デフォルト
         return self.teamcmd
 
@@ -541,7 +523,7 @@ class PlayerServerPlugin(Plugin):
                 except Exception:
                     continue
                 # ゴーリーは除外
-                if pid == GOALIE:
+                if pid == constants.GOALIE:
                     continue
                 ball_distances.append((pid - 1, dist))
 
@@ -549,7 +531,7 @@ class PlayerServerPlugin(Plugin):
             ball_distances.sort(key=lambda x: x[1])
 
             # 近い順に役割を割り当てる（存在する範囲で）
-            role_order = [ALPHA, BETA, GAMMA, DELTA]
+            role_order = [constants.ALPHA, constants.BETA, constants.GAMMA, constants.DELTA]
             for i, (idx, _) in enumerate(ball_distances[:len(role_order)]):
                 if 0 <= idx < num_players:
                     roles[idx] = role_order[i]

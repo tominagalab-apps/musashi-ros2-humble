@@ -8,6 +8,7 @@
   <license>TODO: License declaration</license>
 
   <depend>rclpy</depend>
+  <depend>musashi_basestation</depend>
   <depend>python_qt_binding</depend>
   <depend>rqt_gui</depend>
   <depend>rqt_gui_py</depend>
